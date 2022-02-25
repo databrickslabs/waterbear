@@ -5,13 +5,21 @@ we created that project to convert data models expressed as JSON schema into spa
 
 ## Usage
 
+We specify the name of the entity to get the data model for as well as the directory (distributed file storage) where 
+our JSON schema are stored. 
+
 ```python
 from lh4fs.schema import JsonBuilder
-
 schema, constraints = JsonBuilder('/path/to/json/models').build("employee")
 ```
 
 ### Retrieve schema and constraints
+
+Even though records may sometimes "look" structured (e.g. JSON files), enforcing a schema is not just a good practice; 
+in enterprise settings, it guarantees any missing field is still expected, unexpected fields are discarded and data 
+types are fully evaluated (e.g. a date should be treated as a date object and not a string). 
+Using LH4FS pyspark module, we retrieve the spark schema required to process a given entity (e.g. derivative) 
+that we apply on batch or on real-time (e.g. over a stream of raw records). This process is called data schematization.
 
 ```json
 {"metadata":{"desc":"Employee ID"},"name":"id","nullable":false,"type":"integer"}
@@ -21,6 +29,13 @@ schema, constraints = JsonBuilder('/path/to/json/models').build("employee")
 {"metadata":{"desc":"Employee skills"},"name":"skills","nullable":true,"type":{"containsNull":true,"elementType":"string","type":"array"}}
 {"metadata":{"desc":"Employee role"},"name":"role","nullable":true,"type":"string"}
 ```
+
+Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
+we can detect if a field is required or not. Given an enumeration object, we ensure its value consistency 
+(e.g. country code). In addition to the technical constraints derived from the schema itself, the model also reports 
+business expectations using e.g. minimum, maximum, maxItems, pattern JSON parameters. 
+All these technical and business constraints will be programmatically retrieved from our JSON model and interpreted 
+as a series of SQL expressions.
 
 ```json
 {
@@ -35,6 +50,14 @@ schema, constraints = JsonBuilder('/path/to/json/models').build("employee")
 
 ### Delta Live Tables
 
+Our first step is to retrieve files landing to a distributed file storage using Spark auto-loader 
+(though this framework can easily be extended to read different streams, using a Kafka connector for instance). 
+In continuous mode, files will be processed as they land, `max_files` at a time. 
+In triggered mode, only new files will be processed since last run. 
+Using Delta Live Tables, we ensure the execution and processing of delta increments, preventing organizations 
+from having to maintain complex checkpointing mechanisms to understand what data needs to be processed next; 
+delta live tables seamlessly handles records that haven't yet been processed, first in first out.
+
 ```python
 @dlt.create_table()
 def bronze():
@@ -47,10 +70,13 @@ def bronze():
     )
 ```
 
+Our pipeline will evaluate our series of SQL rules against our schematized dataset (i.e. reading from Bronze), 
+dropping record breaching any of our expectations through the `expect_all` pattern and reporting on data quality 
+in real time
 
 ```python
 @dlt.create_table()
-@dlt.expect_all_or_drop(constraints) # we enforce expectations and may drop record, ignore or fail pipelines
+@dlt.expect_all(constraints) # we enforce expectations and may drop record, ignore or fail pipelines
 def silver():
   return dlt.read_stream("bronze")
 ```
