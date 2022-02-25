@@ -83,6 +83,17 @@ def silver():
 
 ![](images/pipeline_processing.png)
 
+
+## Roadmap
+
+We plan to integrate the legend stack following our contribution to [FINOS](https://github.com/finos-labs/legend-delta).
+We aim at keeping some sort of consistency with JSON models as follows
+
+```python
+from lh4fs.schema import LegendBuilder
+schema, constraints = LegendBuilder('/path/to/legend/models').build("employee")
+```
+
 ## Project support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
 

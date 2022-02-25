@@ -17,6 +17,14 @@ class LH4FSEntity:
         self.constraints = constraints
 
 
+class LegendBuilder:
+    def __init__(self, schema_directory=None):
+        raise Exception("Legend is not yet supported")
+
+    def build(self, model):
+        raise Exception("Legend is not yet supported")
+
+
 class JsonBuilder:
 
     def __init__(self, schema_directory=None):
