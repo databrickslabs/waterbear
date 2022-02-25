@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Person Schema",
+  "description": "Entity describing a person",
+  "type": "object",
+  "properties": {
+    "first_name": {
+      "$ref": "common.json#/name"
+    },
+    "last_name": {
+      "description": "person last name",
+      "$ref": "common.json#/name"
+    },
+    "birth_date": {
+      "description": "Person birth date",
+      "type": "string",
+      "format": "date"
+    },
+    "username": {
+      "description": "employee nickname",
+      "type": "string",
+      "pattern": "^[a-z0-9]{2,}$"
+    }
+  },
+  "required": [
+    "firstName",
+    "lastName",
+    "dateOfBirth"
+  ]
+}
