@@ -5,11 +5,11 @@ setuptools.setup(
     name='lh4fs-json',
     version='1.0',
     author='Antoine Amend',
-    author_email='antoine.amend@databricks.com',
+    author_email='antoine.amend@lh4fs.com',
     description='Provisioning Lakehouse for Financial Services with JSON data model',
     long_description_content_type='text/markdown',
     url='https://github.com/databrickslabs/lh4fs-json',
-    packages=find_packages(where='.', include=['databricks']),
+    packages=find_packages(where='.', include=['lh4fs']),
     extras_require=dict(tests=["pytest"]),
     classifiers=[
         'Programming Language :: Python :: 3',

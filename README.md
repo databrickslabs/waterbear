@@ -6,8 +6,8 @@ we created that project to convert data models expressed as JSON schema into spa
 ## Usage
 
 ```python
-from databricks.lh4fs import L4FSModel
-schema, constraints = L4FSModel('/path/to/json/models').load("employee")
+from lh4fs.schema import Builder
+schema, constraints = Builder('/path/to/json/models').load("employee")
 ```
 
 ### Retrieve schema and constraints
@@ -37,13 +37,13 @@ schema, constraints = L4FSModel('/path/to/json/models').load("employee")
 ```python
 @dlt.create_table()
 def bronze():
-  return (
-    spark
-      .readStream
-      .format(file_format)  # we read standard data sources, json, csv, jdbc, etc.
-      .schema(schema)       # ... but enforce schema
-      .load('/path/to/data/files')
-  )
+    return (
+        spark
+            .readStream
+            .format('XXX')   # we read standard data sources, json, csv, jdbc, etc.
+            .schema(schema)  # ... but enforce schema
+            .load('/path/to/data/files')
+    )
 ```
 
 

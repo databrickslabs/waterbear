@@ -10,14 +10,14 @@ def load_json(json_file):
         return json.loads(f.read())
 
 
-class L4FSEntity:
+class LH4FSEntity:
 
     def __init__(self, schema, constraints):
         self.schema = schema
         self.constraints = constraints
 
 
-class L4FSModel:
+class Builder:
 
     def __init__(self, schema_directory=None):
         if not schema_directory:
@@ -260,7 +260,7 @@ class L4FSModel:
         return constraints
 
     '''
-    Process a databricks property (i.e. a field) given a name and a property object
+    Process a lh4fs property (i.e. a field) given a name and a property object
     A field may be a reference to a common object such as currency code,
     so recursive call may be required
     We look at field description
