@@ -2,7 +2,7 @@ import json
 import unittest
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from lh4fs.schema import Builder
+from lh4fs.schema import JsonBuilder
 
 from . import (
     SCHEMA_DIR,
@@ -13,7 +13,7 @@ from . import (
 class LF4SUnitTest(unittest.TestCase):
 
     def test_ddl(self):
-        schema, constraints = Builder(SCHEMA_DIR).load("employee")
+        schema, constraints = JsonBuilder(SCHEMA_DIR).build("employee")
         print(json.dumps(constraints, indent=2, sort_keys=True))
         for field in schema.fields:
             print(field.json())
@@ -32,13 +32,13 @@ class LF4SIntegrationTest(unittest.TestCase):
         self.spark.stop()
 
     def test_schema_apply(self):
-        schema, constraints = Builder(SCHEMA_DIR).load("employee")
-        df = self.spark.read.format("json").schema(schema).load(DATA_DIR)
+        schema, constraints = JsonBuilder(SCHEMA_DIR).build("employee")
+        df = self.spark.read.format("json").schema(schema).build(DATA_DIR)
         df.show()
         self.assertEqual(100, df.count())
 
     def test_constraints_apply(self):
-        schema, constraints = Builder(SCHEMA_DIR).load("employee")
+        schema, constraints = JsonBuilder(SCHEMA_DIR).build("employee")
         constraint_exprs = [F.expr(c) for c in constraints.values()]
         constraint_names = [F.lit(c) for c in constraints.keys()]
 
@@ -46,7 +46,7 @@ class LF4SIntegrationTest(unittest.TestCase):
         def filter_array(xs, ys):
             return [ys[i] for i, x in enumerate(xs) if not x]
 
-        self.spark.read.format("json").schema(schema).load(DATA_DIR) \
+        self.spark.read.format("json").schema(schema).build(DATA_DIR) \
             .withColumn('databricks_expr', F.array(constraint_exprs)) \
             .withColumn('databricks_name', F.array(constraint_names)) \
             .withColumn('lh4fs', filter_array('databricks_expr', 'databricks_name')) \

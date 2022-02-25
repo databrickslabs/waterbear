@@ -6,8 +6,9 @@ we created that project to convert data models expressed as JSON schema into spa
 ## Usage
 
 ```python
-from lh4fs.schema import Builder
-schema, constraints = Builder('/path/to/json/models').load("employee")
+from lh4fs.schema import JsonBuilder
+
+schema, constraints = JsonBuilder('/path/to/json/models').build("employee")
 ```
 
 ### Retrieve schema and constraints
@@ -40,9 +41,9 @@ def bronze():
     return (
         spark
             .readStream
-            .format('XXX')   # we read standard data sources, json, csv, jdbc, etc.
+            .format('XXX')  # we read standard data sources, json, csv, jdbc, etc.
             .schema(schema)  # ... but enforce schema
-            .load('/path/to/data/files')
+            .build('/path/to/data/files')
     )
 ```
 

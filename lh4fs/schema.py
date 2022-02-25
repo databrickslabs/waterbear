@@ -17,7 +17,7 @@ class LH4FSEntity:
         self.constraints = constraints
 
 
-class Builder:
+class JsonBuilder:
 
     def __init__(self, schema_directory=None):
         if not schema_directory:
@@ -355,7 +355,7 @@ class Builder:
     We retrieve all fields, referenced entities,
     metadata as a spark schema
     '''
-    def load(self, model):
+    def build(self, model):
         if ".json" in model:
             json_file_name = model
         else:
