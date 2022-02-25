@@ -7,21 +7,18 @@ we created that project to convert data models expressed as JSON schema into spa
 
 ```python
 from databricks.lh4fs import L4FSModel
-model = L4FSModel('/path/to/json/models').load("employee")
-schema = model.schema
-constraints = model.constraints
+schema, constraints = L4FSModel('/path/to/json/models').load("employee")
 ```
 
-```python
-@dlt.create_table()
-def bronze():
-  return (
-    spark
-      .readStream
-      .format(file_format)  # we read standard data sources
-      .schema(model.schema) # ... but enforce schema
-      .load('/path/to/data/files')
-  )
+### Retrieve schema and constraints
+
+```json
+{"metadata":{"desc":"Employee ID"},"name":"id","nullable":false,"type":"integer"}
+{"metadata":{"desc":"Employee personal information"},"name":"person","nullable":false,"type":{"fields":[{"metadata":{"desc":"A person name, first or last"},"name":"first_name","nullable":true,"type":"string"},{"metadata":{"desc":"person last name"},"name":"last_name","nullable":true,"type":"string"},{"metadata":{"desc":"Person birth date"},"name":"birth_date","nullable":true,"type":"date"},{"metadata":{"desc":"employee nickname"},"name":"username","nullable":true,"type":"string"}],"type":"struct"}}
+{"metadata":{"desc":"Employee first day of employment"},"name":"joined_date","nullable":true,"type":"date"}
+{"metadata":{"desc":"Number of high fives"},"name":"high_fives","nullable":true,"type":"double"}
+{"metadata":{"desc":"Employee skills"},"name":"skills","nullable":true,"type":{"containsNull":true,"elementType":"string","type":"array"}}
+{"metadata":{"desc":"Employee role"},"name":"role","nullable":true,"type":"string"}
 ```
 
 ```json
@@ -35,9 +32,24 @@ def bronze():
 }
 ```
 
+### Delta Live Tables
+
 ```python
 @dlt.create_table()
-@dlt.expect_all_or_drop(model.constraints)
+def bronze():
+  return (
+    spark
+      .readStream
+      .format(file_format)  # we read standard data sources, json, csv, jdbc, etc.
+      .schema(schema)       # ... but enforce schema
+      .load('/path/to/data/files')
+  )
+```
+
+
+```python
+@dlt.create_table()
+@dlt.expect_all_or_drop(constraints) # we enforce expectations and may drop record, ignore or fail pipelines
 def silver():
   return dlt.read_stream("bronze")
 ```

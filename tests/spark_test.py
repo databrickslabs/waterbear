@@ -14,9 +14,9 @@ from . import (
 class LF4SUnitTest(unittest.TestCase):
 
     def test_ddl(self):
-        model = L4FSModel(SCHEMA_DIR).load("employee")
-        print(json.dumps(model.constraints, indent=2, sort_keys=True))
-        for field in model.schema.fields:
+        schema, constraints = L4FSModel(SCHEMA_DIR).load("employee")
+        print(json.dumps(constraints, indent=2, sort_keys=True))
+        for field in schema.fields:
             print(field.json())
 
 
@@ -33,22 +33,22 @@ class LF4SIntegrationTest(unittest.TestCase):
         self.spark.stop()
 
     def test_schema_apply(self):
-        model = L4FSModel(SCHEMA_DIR).load("employee")
-        df = self.spark.read.format("json").schema(model.schema).load(DATA_DIR)
+        schema, constraints = L4FSModel(SCHEMA_DIR).load("employee")
+        df = self.spark.read.format("json").schema(schema).load(DATA_DIR)
         df.show()
         self.assertEqual(100, df.count())
 
+
     def test_constraints_apply(self):
-        model = L4FSModel(SCHEMA_DIR).load("employee")
-        constraints = model.constraints.items()
-        constraint_exprs = [F.expr(c[1]) for c in constraints]
-        constraint_names = [F.lit(c[0]) for c in constraints]
+        schema, constraints = L4FSModel(SCHEMA_DIR).load("employee")
+        constraint_exprs = [F.expr(c) for c in constraints.values()]
+        constraint_names = [F.lit(c) for c in constraints.keys()]
 
         @F.udf('array<string>')
         def filter_array(xs, ys):
             return [ys[i] for i, x in enumerate(xs) if not x]
 
-        self.spark.read.format("json").schema(model.schema).load(DATA_DIR) \
+        self.spark.read.format("json").schema(schema).load(DATA_DIR) \
             .withColumn('databricks_expr', F.array(constraint_exprs)) \
             .withColumn('databricks_name', F.array(constraint_names)) \
             .withColumn('databricks', filter_array('databricks_expr', 'databricks_name')) \

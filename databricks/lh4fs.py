@@ -1,5 +1,4 @@
 import os
-import re
 import json
 from pyspark.sql.types import *
 
@@ -26,12 +25,20 @@ class L4FSModel:
         self.schema_directory = schema_directory
         self.constraints = {}
 
+    '''
+    Arrays may be of simple or complex types. We treat those as standard object property and retrieve the
+    equivalent spark data type. For complex types (i.e. object), we recursively access the underlying properties
+    and references (if not defined inline). Note that values of Arrays cannot be validated using expectations 
+    '''
     def __get_array_type(self, tpe, fmt, prp):
+
         if tpe == "object":
+            # array is of complex type, we need to access its underlying properties
             nested_prp = prp['properties']
             nested_fields = nested_prp.keys()
             nested_required = set(prp['required'])
             nested_structs = []
+            # we may have to go through properties recursively for nested elements
             for nested_field in nested_fields:
                 nested_field_nullable = nested_field not in nested_required
                 nested_property = nested_prp[nested_field]
@@ -46,6 +53,8 @@ class L4FSModel:
         elif tpe == "boolean":
             return BooleanType()
         elif tpe == "string":
+            # in json world, a string type might have different formats such as IP, email, etc.
+            # we only support STRING, DATE and TIMESTAMP
             if not fmt:
                 return StringType()
             elif fmt == "date":
@@ -56,10 +65,8 @@ class L4FSModel:
 
     '''
     Converting a JSON field into a Spark type
-    Simple mapping exercise for atomic types (number, string, etc),
-    this process becomes complex for nested entities
-    For entities of type object, we recursively parse object
-    and map their respective types into StructTypes
+    Simple mapping exercise for atomic types (number, string, etc), this process becomes complex for nested entities
+    For entities of type object, we recursively parse object and map their respective types into StructTypes
     For list, we recursively call that function to extract entity types
     '''
     def __process_property_type(self, fqn, name, tpe, nullable, fmt, prp, dsc):
@@ -83,6 +90,7 @@ class L4FSModel:
             return struct
 
         if tpe == "number":
+            # We convert Json NUMBER into Spark DOUBLE Types
             self.constraints.update(self.__validate_numbers(fqn, prp, nullable))
             struct = StructField(name, DoubleType(), nullable, metadata={"desc": dsc})
             return struct
@@ -115,6 +123,11 @@ class L4FSModel:
 
         raise Exception("Unsupported type {} for field `{}`".format(tpe, fqn))
 
+    '''
+    We may extract additional constraints from our String objects, such as minimum or maximum length, or even regexes
+    These constraints will be evaluated as SQL expressions that can be used within Delta Live Tables as-is
+    Each generated constraint will have a name and an expression as a form of dictionary
+    '''
     def __validate_strings(self, name, prp, nullable):
         constraints = self.__validate(name, nullable)
         minimum = prp.get('minLength', None)
@@ -151,6 +164,11 @@ class L4FSModel:
 
         return constraints
 
+    '''
+    We may extract additional constraints from our Date or Timestamp objects, such as minimum or maximum
+    These constraints will be evaluated as SQL expressions that can be used within Delta Live Tables as-is
+    Each generated constraint will have a name and an expression as a form of dictionary
+    '''
     def __validate_dates(self, name, prp, nullable):
         constraints = self.__validate(name, nullable)
         minimum = prp.get('minimum', None)
@@ -171,6 +189,11 @@ class L4FSModel:
             constraints[nme] = exp
         return constraints
 
+    '''
+     We may extract additional constraints from our Numeric objects, such as minimum or maximum
+     These constraints will be evaluated as SQL expressions that can be used within Delta Live Tables as-is
+     Each generated constraint will have a name and an expression as a form of dictionary
+    '''
     def __validate_numbers(self, name, prp, nullable):
         constraints = self.__validate(name, nullable)
         minimum = prp.get('minimum', None)
@@ -191,6 +214,12 @@ class L4FSModel:
             constraints[nme] = exp
         return constraints
 
+    '''
+     We may extract additional constraints from our Array objects, such as minimum or maximum number of items
+     These constraints will be evaluated as SQL expressions that can be used within Delta Live Tables as-is
+     Each generated constraint will have a name and an expression as a form of dictionary
+     Note that we cannot validate the consistency of values within an array without complex UDF
+    '''
     def __validate_arrays(self, name, prp, nullable):
         constraints = self.__validate(name, nullable)
         # we cannot validate the integrity of each field
@@ -215,6 +244,12 @@ class L4FSModel:
             constraints[nme] = exp
         return constraints
 
+    '''
+     As part of a JSON model, some fields may be marked as mandatory. We leverage that info to define expectations 
+     testing for null. These constraints will be evaluated as SQL expressions that can be used within DLT as-is
+     Each generated constraint will have a name and an expression as a form of dictionary
+     Note that we cannot validate the consistency of values within an array without complex UDF
+    '''
     @staticmethod
     def __validate(name, nullable):
         constraints = {}
@@ -232,22 +267,25 @@ class L4FSModel:
     '''
     def __process_property(self, name, nullable, prp, parent, parent_dsc):
 
+        # as we go through different level of nested values, we must remember the fully qualified name of our field
+        # this will be used for evaluating our constraints
         if parent:
             fqn = "{}.`{}`".format(parent, name)
         else:
             fqn = "`{}`".format(name)
 
+        # as we support supertypes (employee extends person), we may have carried metadata over
+        # if a field is not described, we take the description of its parent reference, if any
         dsc = prp.get('description', None)
         if parent_dsc:
             # we prefer entity specific description if any rather than generic
-            # parent takes precedence
             dsc = parent_dsc
 
         tpe = prp.get('type', None)
         fmt = prp.get('format', None)
         ref = prp.get('$ref', None)
 
-        # processing referenced property
+        # fields may be described as a reference to different JSON models.
         if ref:
 
             # retrieve the name of the Json file and
@@ -275,7 +313,7 @@ class L4FSModel:
     We load that entire referenced entity as we would
     be loading any object, parsing json file into spark schema
     '''
-    def __load_reference(self, ref, parent):
+    def __load_supertype(self, ref, parent):
         ref_object = ref.split('/')[-1]
         ref_json_file = os.path.join(self.schema_directory, ref_object)
         ref_json_model = load_json(ref_json_file)
@@ -292,10 +330,11 @@ class L4FSModel:
 
         schema = []
 
-        # Adding referenced entities
+        # Adding supertype entities (employee is derived from person)
+        # We do not support anyOf, oneOf as we cannot guarantee valid schema with optional entities
         if "allOf" in model.keys():
             for ref in model['allOf']:
-                schema.extend(self.__load_reference(ref['$ref'], parent))
+                schema.extend(self.__load_supertype(ref['$ref'], parent))
             return schema
 
         required = model['required']
@@ -317,12 +356,21 @@ class L4FSModel:
     metadata as a spark schema
     '''
     def load(self, model):
-        json_file = os.path.join(self.schema_directory, "{}.json".format(model))
+        if ".json" in model:
+            json_file_name = model
+        else:
+            json_file_name = "{}.json".format(model)
+        json_file = os.path.join(self.schema_directory, json_file_name)
         json_model = load_json(json_file)
         tpe = json_model.get('type', None)
         if not tpe or tpe != "object":
             raise Exception("Can only process entities of type object")
 
+        # We retrieve all spark fields, nested entities and references
         struct = self.__load_object(json_model)
+
+        # And create a spark schema accordingly
         schema = StructType(struct)
-        return L4FSEntity(schema, self.constraints)
+
+        # In addition to the schema, we also return all expectations
+        return schema, self.constraints
