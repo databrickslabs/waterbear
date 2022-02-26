@@ -21,7 +21,7 @@ Adhering to strict industry data standards, our project is supporting any data m
 The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
 between regulatory systems in finance, supported by the [European Commission](http://ec.europa.eu/index_en.htm), 
 the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubator](https://opendataincubator.eu/). 
-We can easily read spark schema and delta expectations from our `collateral` entity.
+In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
 from lh4fs.schema import JsonBuilder
@@ -36,7 +36,7 @@ is a flexible platform that offers financial institutions solutions to explore, 
 their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
 collaborate in the creation to enterprise data models with strict governance standards and software delivery best 
 practices. Pending our code contribution [approval](https://github.com/finos-labs/legend-delta) to the Finos community, 
-the LEGEND data model will be fully supported, reading entities as follows.
+we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model.
 
 ```python
 from lh4fs.schema import LegendBuilder
