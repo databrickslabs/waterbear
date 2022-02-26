@@ -1,12 +1,18 @@
-![](images/lakehouse-for-financial-services.jpeg)
+![](images/waterbear-small.png)
 
-*Given an enterprise data model, we programmatically convert each entity into its spark schema 
-equivalent, extract metadata and derive tables expectations as SQL expressions. This critical foundation allows financial
-services organizations to automatically provision 
-[Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with high governance
-standards and minimum development overhead*
+Though tardigrades are disarmingly cute, they are also nearly indestructible and can even survive in outer space.
+This project creates the smallest fully functional unit of work with the highest degree of resilience and governance
+standards that can be used to carry the work of enforcing industry data models at enterprise scale.
 
 ___
+*Given an enterprise data model, we programmatically convert each entity into its spark schema 
+equivalent, extract metadata and derive tables expectations as SQL expressions. This critical foundation allows financial
+services organizations to bootstrap 
+[Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with 
+fully functional pipelines, high governance
+standards and minimum development overhead*
+
+![](images/lakehouse-for-financial-services.jpeg)
 
 ## Enterprise data models
 
