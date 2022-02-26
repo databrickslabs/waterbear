@@ -23,14 +23,14 @@ between regulatory systems in finance, supported by the European Commission, the
 the Open Data Incubator. 
 
 <div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
-    <a href="http://ec.europa.eu/index_en.htm" target="_blank">
-        <img src="./documentation/images/eu_commission.png" width="30%"/>
+    <a href="" target="_blank">
+        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/eu_commission.png" width="30%"/>
     </a>
-    <a href="http://opendata.institute/" target="_blank">
-        <img src="./documentation/images/odi.png" width="30%"/>
+    <a href="" target="_blank">
+        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/odi.png" width="30%"/>
     </a>
-    <a href="https://opendataincubator.eu/" target="_blank">
-        <img src="./documentation/images/odine.png" width="30%"/>
+    <a href="" target="_blank">
+        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/odine.png" width="30%"/>
     </a>
 </div>
 
@@ -50,8 +50,8 @@ collaborate in the creation to enterprise data models with strict governance sta
 practices. 
 
 <div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
-    <a href="https://www.finos.org/hubfs/" target="_blank">
-        <img src="./press-release-goldman-sachs-finos-legend-1.png" width="30%"/>
+    <a href="" target="_blank">
+        <img src="https://www.finos.org/hubfs/press-release-goldman-sachs-finos-legend-1.png" width="30%"/>
     </a>
 </div>
 
