@@ -1,23 +1,24 @@
 ![](images/waterbear-small.png)
 
-Though tardigrades are disarmingly cute, they are also nearly indestructible and can even survive in outer space.
-This project creates the smallest fully functional unit of work with the highest degree of resilience and governance
-standards that can be used to carry the work of enforcing industry data models on a data lakehouse.
+Tardigrades (aka water bears) can be found in milder environments such as lakes, ponds and meadows, often living nearby 
+lake houses. Though these species are disarmingly cute, they are also nearly indestructible and can even survive in 
+harsh environment like outer space. This project gives life to the smallest fully functional unit of data work with the 
+highest degree of resilience and governance standards. We coded our water bears to carry the burden of enforcing common 
+data models that brings life to an industry regulated data lakehouse.
 
 ## Enterprise data models
 
-Given an enterprise data model, we programmed our waterbears to automatically convert each entity into its spark schema 
-equivalent, extract metadata (such as field descriptions) and derive tables expectations as SQL expressions. 
-This solid foundation allows financial services organizations to bootstrap their 
+Given an enterprise data model, we automatically convert an entity into its spark schema equivalent, extract metadata, 
+derive tables expectations as SQL expressions and provision data pipelines for operation workflows.
+Such foundations allow financial services institutions to bootstrap their 
 [Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with 
-fully functional pipelines, high governance standards and minimum development overhead. Designed with industry 
-standards in mind, therefore compatible with multiple data formats and in line with the latest developments across 
-the financial services industry.
+high resilient data pipelines with minimum development overhead. Designed with industry standards in mind, wategrade is 
+compatible with multiple data formats and in line with the latest developments across the financial services industry.
 
 ### JSON Schema
 
-Adhering to strict industry data standards, our project is supporting any data models expressed as 
-[JSON Schema](https://json-schema.org/) and was built to ensure full compability with the 
+Adhering to strict industry data standards, our project is supporting data models expressed as 
+[JSON Schema](https://json-schema.org/) and was built to ensure full compatibility with the 
 [FIRE](https://suade.org/fire/manifesto/) initiative led by [Suade Labs](https://suade.org/).
 The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
 between regulatory systems in finance, supported by the [European Commission](http://ec.europa.eu/index_en.htm), 
@@ -25,7 +26,7 @@ the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubat
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
-from lh4fs.schema import JsonBuilder
+from watergrade.schema import JsonBuilder
 schema, constraints = JsonBuilder('fire/model').build("collateral")
 ```
 
@@ -40,7 +41,7 @@ practices. Pending our code contribution [approval](https://github.com/finos-lab
 we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model.
 
 ```python
-from lh4fs.schema import LegendBuilder
+from watergrade.schema import LegendBuilder
 schema, constraints = LegendBuilder('legend/model').build("derivative")
 ```
 
