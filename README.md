@@ -1,24 +1,23 @@
-![](images/watergrade-small.png)
+![](images/waterbear-small.png)
 
 [![DBR](https://img.shields.io/badge/DBR-9.1_ML-green)]()
-[![image](https://github.com/databrickslabs/watergrade/workflows/build/badge.svg)](https://github.com/databrickslabs/watergrade/actions?query=workflow%3Abuild)
-[![codecov](https://codecov.io/gh/databrickslabs/watergrade/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
-[![PyPI version](https://badge.fury.io/py/watergrade.svg)](https://badge.fury.io/py/watergrade)
+[![codecov](https://codecov.io/gh/databrickslabs/waterbear/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
+[![PyPI version](https://badge.fury.io/py/dbl-waterbear.svg)](https://badge.fury.io/py/watergrade)
 
-Tardigrades (aka water bears) can be found in milder environments such as lakes, ponds and meadows, often living nearby 
-lake houses. Though these species are disarmingly cute, they are also nearly indestructible and can even survive in 
-harsh environment like outer space. This project gives life to the smallest fully functional unit of data work with the 
-highest degree of resilience and governance standards. We coded our water bears to carry the burden of enforcing common 
-data models that brings life to an industry regulated data lakehouse.
+Tardigrades (aka water bears) can be found in milder environments such as lakes, ponds and meadows, often living near 
+lake houses. Though these species are disarmingly cute, they are also nearly indestructible and can survive in harsh 
+environments like outer space. This project gives life to the smallest fully functional unit of data processing work 
+with the highest degrees of resilience and governance standards. We coded our water bears to carry the burden of 
+enforcing enterprise data models that brings life to an industry regulated data lakehouse.
 
 ## Enterprise data models
 
 Given an enterprise data model, we automatically convert an entity into its spark schema equivalent, extract metadata, 
-derive tables expectations as SQL expressions and provision data pipelines for operation workflows.
+derive tables expectations as SQL expressions and provision data pipelines that accelerate production workflows.
 Such foundations allow financial services institutions to bootstrap their 
 [Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with 
-high resilient data pipelines with minimum development overhead. Designed with industry standards in mind, wategrade is 
-compatible with multiple data formats and in line with the latest developments across the financial services industry.
+highly resilient data pipelines and minimum development overhead. Designed with industry standards in mind, this project
+is compatible with multiple data formats and follows the latest developments across the financial services industry.
 
 ### JSON Schema
 
@@ -31,7 +30,7 @@ the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubat
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
-from watergrade.schema import JsonBuilder
+from waterbear.schema import JsonBuilder
 schema, constraints = JsonBuilder('fire/model').build("collateral")
 ```
 
@@ -41,12 +40,12 @@ schema, constraints = JsonBuilder('fire/model').build("collateral")
 and maintained by the [Finos](https://www.finos.org/) community, the [Legend](https://legend.finos.org/) framework 
 is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
 their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
-collaborate in the creation to enterprise data models with strict governance standards and software delivery best 
+collaborate in the creation of enterprise data models with strict governance standards and software delivery best 
 practices. Pending our code contribution [approval](https://github.com/finos-labs/legend-delta) to the Finos community, 
-we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model.
+we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model example below
 
 ```python
-from watergrade.schema import LegendBuilder
+from waterbear.schema import LegendBuilder
 schema, constraints = LegendBuilder('legend/model').build("derivative")
 ```
 
@@ -60,7 +59,7 @@ or on real-time through structured streaming and auto-loader. In the example bel
 CSV records, resulting in a schematized dataframe.
 
 ```python
-_ = (
+derivative_df = (
     spark
         .read
         .format('csv')  # standard spark formats
@@ -93,7 +92,7 @@ timeliness in financial data pipelines.
 
 ### Delta Live Tables
 
-Our first step is to retrieve files landing to a distributed file storage using Spark auto-loader 
+Our first step is to retrieve files landing to a our industry lakehouse using Spark auto-loader 
 (though this framework can easily be extended to read different streams, using a Kafka connector for instance). 
 In continuous mode, news files will be processed as they unfold, `max_files` at a time. 
 In triggered mode, only new files will be processed since last run. 
@@ -125,11 +124,10 @@ def silver():
 
 ![](images/pipeline_processing.png)
 
-
 ## Using the Project
 
 ```shell
-pip install watergrade
+pip install dbl-waterbear
 ```
 
 ## Project support
