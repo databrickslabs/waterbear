@@ -45,22 +45,12 @@ schema, constraints = LegendBuilder('legend/model').build("derivative")
 
 ## Execution
 
-Even though records may sometimes "look" structured (e.g. JSON files), enforcing a schema is not just a good practice; 
-in enterprise settings, it guarantees any missing field is still expected, unexpected fields are discarded and data 
-types are fully evaluated (e.g. a date should be treated as a date object and not a string). 
-We retrieve the spark schema required to process a given entity (e.g. collateral, derivative) 
-that we apply on batch or on real-time (e.g. over a stream of raw records).
-
-```
-StructField(id,IntegerType,false)
-StructField(person,StructType(List(StructField(first_name,StringType,true),StructField(last_name,StringType,true),StructField(birth_date,DateType,true),StructField(username,StringType,true))),false)
-StructField(joined_date,DateType,true)
-StructField(high_fives,DoubleType,true)
-StructField(skills,ArrayType(StringType,true),true)
-StructField(role,StringType,true)
-```
-
-Given the above, one can enforce schema through native spark operations
+Even though records may often "look" structured (e.g. reading JSON files or well defined CSVs), 
+enforcing a schema is not just a good practice; in enterprise settings, it guarantees any missing field is still 
+expected, unexpected fields are discarded and data types are fully evaluated (e.g. a date should be treated as a date 
+object and not a string). We retrieve the spark schema required to process a given entity that we can apply on batch 
+or on real-time through structured streaming and auto-loader. In the example below, we enforce schema on a batch of 
+CSV records, resulting in a schematized dataframe.
 
 ```python
 _ = (
@@ -75,9 +65,9 @@ _ = (
 Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
 we can detect if a field is required or not. Given an enumeration object, we ensure its value consistency 
 (e.g. country code). In addition to the technical constraints derived from the schema itself, the model also reports 
-business expectations using e.g. minimum, maximum, maxItems, pattern JSON parameters. 
-All these technical and business constraints will be programmatically retrieved from our JSON model and interpreted 
-as a series of SQL expressions.
+business expectations using e.g. minimum, maximum, maxItems, pattern JSON parameters or PURE business logic in Legend. 
+All these technical and business constraints will be programmatically retrieved from our model and interpreted 
+as a series of SQL expressions as per the following example.
 
 ```json
 {
@@ -90,15 +80,18 @@ as a series of SQL expressions.
 }
 ```
 
+Although one could apply those expectations through simple user defined functions, we highly recommend
+the use of [Delta Live Tables](https://databricks.com/product/delta-live-tables) to ensure both reliability and 
+timeliness in financial data pipelines.
+
 ### Delta Live Tables
 
 Our first step is to retrieve files landing to a distributed file storage using Spark auto-loader 
 (though this framework can easily be extended to read different streams, using a Kafka connector for instance). 
-In continuous mode, files will be processed as they land, `max_files` at a time. 
+In continuous mode, news files will be processed as they unfold, `max_files` at a time. 
 In triggered mode, only new files will be processed since last run. 
 Using Delta Live Tables, we ensure the execution and processing of delta increments, preventing organizations 
-from having to maintain complex checkpointing mechanisms to understand what data needs to be processed next; 
-delta live tables seamlessly handles records that haven't yet been processed, first in first out.
+from having to maintain complex checkpointing mechanisms.
 
 ```python
 @dlt.create_table()
@@ -106,19 +99,19 @@ def bronze():
     return (
         spark
             .readStream
-            .format('XXX')  # we read standard data sources, json, csv, jdbc, etc.
-            .schema(schema)  # ... but enforce schema
+            .format('csv')   # we read standard sources
+            .schema(schema)  # and enforce schema
             .build('/path/to/data/files')
     )
 ```
 
-Our pipeline will evaluate our series of SQL rules against our schematized dataset (i.e. reading from Bronze), 
-dropping record breaching any of our expectations through the `expect_all` pattern and reporting on data quality 
-in real time
+Our pipeline will evaluate our series of SQL rules against our schematized dataset, 
+flagging record breaching any of our expectations through the `expect_all` pattern and reporting on data quality 
+in real time. 
 
 ```python
 @dlt.create_table()
-@dlt.expect_all(constraints) # we enforce expectations and may drop record, ignore or fail pipelines
+@dlt.expect_all(constraints) # we enforce expectations
 def silver():
   return dlt.read_stream("bronze")
 ```
