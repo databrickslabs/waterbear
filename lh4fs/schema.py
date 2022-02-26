@@ -42,6 +42,7 @@ class JsonBuilder(Builder):
         :param entity_name: The name of the JSON entity to extract Spark Schema from
         :return: The corresponding Spark Schema that embeds our entity and all its underlying objects
         """
+
         if entity_name.endswith('.json'):
             json_file_name = entity_name
         else:
@@ -76,7 +77,6 @@ class JsonBuilder(Builder):
         """
 
         struct_fields = []
-
         # Adding supertype entities (`employee` is derived from `person`)
         # We do not support `anyOf`, `oneOf` as we cannot guarantee schema consistency with optional attributes
         # loading this supertype, we will process it just like another JSON entity
@@ -86,7 +86,7 @@ class JsonBuilder(Builder):
             return struct_fields
 
         # we get the list of mandatory fields for our JSON entity
-        required = entity['required']
+        required = entity.get('required', None)
 
         # we get all top level fields describing our JSON entity
         fields = entity['properties']
@@ -114,6 +114,7 @@ class JsonBuilder(Builder):
         :param parent_path: the fully qualified name of our parent that we can attach that supertype to (if any)
         :return: the list of [pyspark.sql.types.StructField] defining our JSON supertype and all its underlying objects
         """
+
         ref_object = ref_link.split('/')[-1]
         ref_json_file = os.path.join(self.schema_directory, ref_object)
         ref_json_model = load_json(ref_json_file)
@@ -167,6 +168,7 @@ class JsonBuilder(Builder):
         :param field_desc: the description of the field
         :return: The Spark [pyspark.sql.types.StructField] embedding our referenced JSON entity
         """
+
         # retrieve the name of the Json file and
         # the name of the entity to load
         field_ref = field_properties['$ref']

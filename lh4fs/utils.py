@@ -15,7 +15,7 @@ def load_json(json_file):
     :param json_file: the absolute path of the file to load
     :return: the JSON object
     """
-    if not os.path.exists(json_file):
+    if not os.path.isfile(json_file):
         raise Exception("Could not find file {}".format(json_file))
     with open(json_file) as f:
         return json.loads(f.read())
@@ -45,6 +45,8 @@ class FieldString(FieldGeneric):
     def __init__(self, *args):
         super().__init__(args)
         self.field_format = self.field_properties.get('format', None)
+        if self.field_properties['type'] != 'string':
+            raise Exception('FieldString requires string type')
 
     def get_expectations(self):
         constraints = super().get_expectations()
@@ -58,6 +60,8 @@ class FieldString(FieldGeneric):
 class FieldNumber(FieldGeneric):
     def __init__(self, *args):
         super().__init__(args)
+        if self.field_properties['type'] != 'integer' and self.field_properties['type'] != 'number':
+            raise Exception('FieldNumber requires integer or number type')
 
     def get_expectations(self):
         constraints = super().get_expectations()
@@ -68,6 +72,8 @@ class FieldNumber(FieldGeneric):
 class FieldBoolean(FieldGeneric):
     def __init__(self, *args):
         super().__init__(args)
+        if self.field_properties['type'] != 'boolean':
+            raise Exception('FieldBoolean requires boolean type')
 
     def get_expectations(self):
         return super().get_expectations()
@@ -157,17 +163,17 @@ def validate_numbers(field_path, field_properties) -> {}:
     minimum = field_properties.get('minimum', None)
     maximum = field_properties.get('maximum', None)
     nme = "[{field}] VALUE".format(field=field_path)
-    if minimum and maximum:
+    if (minimum and maximum) or (minimum == 0 and maximum) or (minimum and maximum == 0):
         exp = "{field} IS NULL OR {field} BETWEEN {minimum} AND {maximum}".format(
             field=field_path,
             minimum=float(minimum),
             maximum=float(maximum)
         )
         constraints[nme] = exp
-    elif minimum:
+    elif minimum or minimum == 0:
         exp = "{field} IS NULL OR {field} >= {minimum}".format(field=field_path, minimum=float(minimum))
         constraints[nme] = exp
-    elif maximum:
+    elif maximum or maximum == 0:
         exp = "{field} IS NULL OR {field} <= {maximum}".format(field=field_path, maximum=float(maximum))
         constraints[nme] = exp
     return constraints
@@ -194,7 +200,7 @@ def validate_strings(field_path, field_properties):
 
     if enum:
         nme = "[{field}] VALUE".format(field=field_path)
-        enums = ','.join(["'{}'".format(e) for e in enum])
+        enums = ', '.join(["'{}'".format(e) for e in enum])
         exp = "{field} IS NULL OR {field} IN ({enums})".format(field=field_path, enums=enums)
         constraints[nme] = exp
 
@@ -205,17 +211,17 @@ def validate_strings(field_path, field_properties):
         constraints[nme] = exp
 
     nme = "[{field}] LENGTH".format(field=field_path)
-    if minimum and maximum:
+    if (minimum and maximum) or (minimum and maximum == 0) or (minimum == 0 and maximum):
         exp = "{field} IS NULL OR LENGTH({field}) BETWEEN {minimum} AND {maximum}".format(
             field=field_path,
             minimum=int(minimum),
             maximum=int(maximum)
         )
         constraints[nme] = exp
-    elif minimum:
+    elif minimum or minimum == 0:
         exp = "{field} IS NULL OR LENGTH({field}) >= {minimum}".format(field=field_path, minimum=int(minimum))
         constraints[nme] = exp
-    elif maximum:
+    elif maximum or maximum == 0:
         exp = "{field} IS NULL OR LENGTH({field}) <= {maximum}".format(field=field_path, maximum=int(maximum))
         constraints[nme] = exp
 
@@ -268,18 +274,18 @@ def validate_arrays(field_path, field_properties):
     minimum = field_properties.get('minItems', None)
     maximum = field_properties.get('maxItems', None)
     nme = "[{field}] SIZE".format(field=field_path)
-    if minimum and maximum:
+    if (minimum and maximum) or (minimum == 0 and maximum) or (minimum and maximum == 0):
         exp = "{field} IS NULL OR SIZE({field}) BETWEEN {minimum} AND {maximum}".format(
             field=field_path,
-            minimum=float(minimum),
-            maximum=float(maximum)
+            minimum=int(minimum),
+            maximum=int(maximum)
         )
 
         constraints[nme] = exp
-    elif minimum:
-        exp = "{field} IS NULL OR SIZE({field}) >= {minimum}".format(field=field_path, minimum=float(minimum))
+    elif minimum or minimum == 0:
+        exp = "{field} IS NULL OR SIZE({field}) >= {minimum}".format(field=field_path, minimum=int(minimum))
         constraints[nme] = exp
-    elif maximum:
-        exp = "{field} IS NULL OR SIZE({field}) <= {maximum}".format(field=field_path, maximum=float(maximum))
+    elif maximum or maximum == 0:
+        exp = "{field} IS NULL OR SIZE({field}) <= {maximum}".format(field=field_path, maximum=int(maximum))
         constraints[nme] = exp
     return constraints
