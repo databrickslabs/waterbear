@@ -1,4 +1,9 @@
-![](images/waterbear-small.png)
+![](images/watergrade-small.png)
+
+[![DBR](https://img.shields.io/badge/DBR-9.1_ML-green)]()
+[![image](https://github.com/databrickslabs/watergrade/workflows/build/badge.svg)](https://github.com/databrickslabs/watergrade/actions?query=workflow%3Abuild)
+[![codecov](https://codecov.io/gh/databrickslabs/watergrade/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
+[![PyPI version](https://badge.fury.io/py/watergrade.svg)](https://badge.fury.io/py/watergrade)
 
 Tardigrades (aka water bears) can be found in milder environments such as lakes, ponds and meadows, often living nearby 
 lake houses. Though these species are disarmingly cute, they are also nearly indestructible and can even survive in 
@@ -119,6 +124,13 @@ def silver():
 ```
 
 ![](images/pipeline_processing.png)
+
+
+## Using the Project
+
+```shell
+pip install watergrade
+```
 
 ## Project support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
