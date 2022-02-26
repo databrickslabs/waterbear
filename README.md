@@ -15,25 +15,13 @@ with the latest developments across the financial services industry.
 
 ### JSON Schema
 
-Adhering to strict industry standards ([JSON Schema](https://json-schema.org/)), our project is compatible the 
-[FIRE](https://suade.org/fire/manifesto/)initiative led by [Suade Labs](https://suade.org/) 
-(although it would support any generic JSON schema).
-
-<div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
-    <a href="http://ec.europa.eu/index_en.htm" target="_blank">
-        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/eu_commission.png" width="30%"/>
-    </a>
-    <a href="http://opendata.institute/" target="_blank">
-        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/odi.png" width="30%"/>
-    </a>
-    <a href="https://opendataincubator.eu/" target="_blank">
-        <img src="https://github.com/SuadeLabs/fire/raw/master/documentation/images/odine.png" width="30%"/>
-    </a>
-</div>
-
+Adhering to strict industry data standards, our project is supporting any data models expressed as 
+[JSON Schema](https://json-schema.org/) and was built to ensure full compability with the 
+[FIRE](https://suade.org/fire/manifesto/) initiative led by [Suade Labs](https://suade.org/).
 The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
-between regulatory systems in finance, supported by the European Commission, the Open Data Institute and 
-the Open Data Incubator. We can easily read spark schema and delta expectations from our `collateral` entity.
+between regulatory systems in finance, supported by the [European Commission](http://ec.europa.eu/index_en.htm), 
+the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubator](https://opendataincubator.eu/). 
+We can easily read spark schema and delta expectations from our `collateral` entity.
 
 ```python
 from lh4fs.schema import JsonBuilder
@@ -42,20 +30,13 @@ schema, constraints = JsonBuilder('fire/model').build("collateral")
 
 ### LEGEND Schema
 
-Open sourced by Goldman Sachs and maintained by the FINOS community, the [Legend](https://legend.finos.org/) framework 
+[Open sourced by Goldman Sachs](https://www.finos.org/press/goldman-sachs-open-sources-its-data-modeling-platform-through-finos) 
+and maintained by the [Finos](https://www.finos.org/) community, the [Legend](https://legend.finos.org/) framework 
 is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
-their business processes. 
-
-<div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
-    <a href="https://www.finos.org/press/goldman-sachs-open-sources-its-data-modeling-platform-through-finos" target="_blank">
-        <img src="https://www.finos.org/hubfs/press-release-goldman-sachs-finos-legend-1.png" width="30%"/>
-    </a>
-</div>
-
-Through its abstraction language (PURE) and interface (legend studio), business modelers can 
+their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
 collaborate in the creation to enterprise data models with strict governance standards and software delivery best 
-practices. Pending code [approval](https://github.com/finos-labs/legend-delta), the LEGEND data model will be fully 
-supported, reading entities as follows.
+practices. Pending our code contribution [approval](https://github.com/finos-labs/legend-delta) to the Finos community, 
+the LEGEND data model will be fully supported, reading entities as follows.
 
 ```python
 from lh4fs.schema import LegendBuilder
