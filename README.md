@@ -15,11 +15,26 @@ with the latest developments across the financial services industry.
 
 ### JSON Schema
 
-Adhering to strict industry standards ([JSON Schema](https://json-schema.org/)), our project is compatible the FIRE 
-initiative led by [Suade Labs](https://suade.org/) (although would support any generic JSON schema).
+Adhering to strict industry standards ([JSON Schema](https://json-schema.org/)), our project is compatible the 
+[FIRE](https://suade.org/fire/manifesto/)initiative led by [Suade Labs](https://suade.org/) 
+(although it would support any generic JSON schema).
 The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
 between regulatory systems in finance, supported by the European Commission, the Open Data Institute and 
-the Open Data Incubator. We can easily read spark schema and delta expectations from our `collateral` entity.
+the Open Data Incubator. 
+
+<div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
+    <a href="http://ec.europa.eu/index_en.htm" target="_blank">
+        <img src="./documentation/images/eu_commission.png" width="30%"/>
+    </a>
+    <a href="http://opendata.institute/" target="_blank">
+        <img src="./documentation/images/odi.png" width="30%"/>
+    </a>
+    <a href="https://opendataincubator.eu/" target="_blank">
+        <img src="./documentation/images/odine.png" width="30%"/>
+    </a>
+</div>
+
+We can easily read spark schema and delta expectations from our `collateral` entity.
 
 ```python
 from lh4fs.schema import JsonBuilder
@@ -32,7 +47,15 @@ Open sourced by Goldman Sachs and maintained by the FINOS community, the [Legend
 is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
 their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
 collaborate in the creation to enterprise data models with strict governance standards and software delivery best 
-practices. Pending code [approval](https://github.com/finos-labs/legend-delta), the LEGEND data model will be fully 
+practices. 
+
+<div class="image-group" style="width:100%; height:auto; margin:25px; text-align:center; background-color: white">
+    <a href="https://www.finos.org/hubfs/" target="_blank">
+        <img src="./press-release-goldman-sachs-finos-legend-1.png" width="30%"/>
+    </a>
+</div>
+
+Pending code [approval](https://github.com/finos-labs/legend-delta), the LEGEND data model will be fully 
 supported, reading entities as follows. 
 
 ```python
