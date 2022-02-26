@@ -1,4 +1,6 @@
-![](images/waterbear-small.png)
+<p align="left">
+  <img src="images/waterbear-small.png" width="300px"/>
+</p>
 
 [![DBR](https://img.shields.io/badge/DBR-9.1_ML-green)]()
 [![codecov](https://codecov.io/gh/databrickslabs/waterbear/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
