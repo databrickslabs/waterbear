@@ -2,43 +2,62 @@ from lh4fs.utils import *
 from pyspark.sql.types import *
 
 
-class LegendBuilder:
-    def __init__(self, schema_directory=None):
-        raise Exception("Legend is not yet supported")
-
-    def build(self, model):
-        raise Exception("Legend is not yet supported")
-
-
-class JsonBuilder:
-
-    def __init__(self, schema_directory=None):
-        if not schema_directory:
-            raise Exception("Could not load directory [{}]".format(schema_directory))
+class Builder:
+    """
+    Common interface for our project
+    User will have to specify a directory on disk where models might be stored
+    """
+    def __init__(self, schema_directory):
         self.schema_directory = schema_directory
         self.constraints = {}
+        if not os.path.exists(schema_directory) or not os.path.isdir(schema_directory):
+            raise Exception('path {} is not a valid directory'.format(schema_directory))
+
+    def build(self, entity_name) -> Schema:
+        raise Exception('Not implemented')
+
+
+class LegendBuilder(Builder):
+    """
+    We plan to extend our framework to support multiple data model formats, including Legend
+    given our recent contribution to [FINOS LABS](https://github.com/finos-labs/legend-delta)
+    """
+    def __init__(self, schema_directory=None):
+        super().__init__(schema_directory)
+
+
+class JsonBuilder(Builder):
+    """
+    This implementation follows JSON schema [standards](https://json-schema.org/).
+    Please refer to JSON schema specs for more information about supported data types
+    """
+    def __init__(self, schema_directory=None):
+        super().__init__(schema_directory)
 
     def build(self, entity_name):
         """
-        Entry point, given a name of an entity,
-        we access and parse underlying json object
-        We retrieve all fields, referenced entities,
-        metadata as a spark schema
+        Entry point, given a name of an entity, we access and parse its JSON object
+        We retrieve all fields, referenced entities, supertypes and metadata as a spark schema
+        We also derive all SQL constraints from the JSON schema, such as mandatory field, string type or minimum bounds
         :param entity_name: The name of the JSON entity to extract Spark Schema from
         :return: The corresponding Spark Schema that embeds our entity and all its underlying objects
         """
-        if ".json" in entity_name:
+        if entity_name.endswith('.json'):
             json_file_name = entity_name
         else:
             json_file_name = "{}.json".format(entity_name)
+
         json_file = os.path.join(self.schema_directory, json_file_name)
+        if not os.path.exists(json_file) or not os.path.isfile(json_file):
+            raise Exception('File {} is not a valid file'.format(json_file))
+
         entity = load_json(json_file)
         entity_type = entity.get('type', None)
         if not entity_type or entity_type != "object":
-            raise Exception("Can only process entities of type object")
+            raise Exception("Can only process JSON entities of type object")
 
         # We retrieve all spark fields, nested entities and references
-        struct_fields = self.__load_object(entity)
+        struct_fields = self.__process_object(entity)
 
         # And create a spark schema accordingly
         schema = StructType(struct_fields)
@@ -46,72 +65,80 @@ class JsonBuilder:
         # In addition to the schema, we also return all expectations
         return schema, self.constraints
 
-    def __load_object(self, entity, parent_path=None):
+    def __process_object(self, entity, parent_path=None):
         """
-        Core business logic, we process a given entity from a json object
-        An entity contains metadata (e.g. description),
-        required field definition and property value
-        We extract each property, map them to their spark
-        type and return the spark schema for that given entity
-        :param entity: The JSON entity we want to extract Spark Schema from
-        :param parent_path: For nested object, we need to know the full hierarchy to attach that entity to
-        :return: the list of Spark StructField defining our entity
+        Core business logic of a JSON entity, we process a given entity from a JSON object
+        An entity contains metadata (e.g. description), required field definition and property value
+        We extract each property, map them to their spark type
+        :param entity: The JSON entity we want to extract Spark schema from
+        :param parent_path: For nested object, we need to know the full hierarchy to attach that entity to (if any)
+        :return: the list of [pyspark.sql.types.StructField] defining our JSON entity and all its underlying objects
         """
 
         struct_fields = []
 
-        # Adding supertype entities (employee is derived from person)
-        # We do not support anyOf, oneOf as we cannot guarantee valid schema with optional entities
+        # Adding supertype entities (`employee` is derived from `person`)
+        # We do not support `anyOf`, `oneOf` as we cannot guarantee schema consistency with optional attributes
+        # loading this supertype, we will process it just like another JSON entity
         if "allOf" in entity.keys():
             for ref in entity['allOf']:
-                struct_fields.extend(self.__load_supertype_object(ref['$ref'], parent_path))
+                struct_fields.extend(self.__process_supertype(ref['$ref'], parent_path))
             return struct_fields
 
+        # we get the list of mandatory fields for our JSON entity
         required = entity['required']
+
+        # we get all top level fields describing our JSON entity
         fields = entity['properties']
 
-        # Processing fields
+        # we process each field sequentially
         for field_name in fields.keys():
             field_properties = fields[field_name]
             is_nullable = field_name not in required
+            # nested object will not inherit from the parent description, hence a None parent description
+            # we process each field in a different function to understand complex / simple types
             field_struct = self.__process_field(field_name, is_nullable, field_properties, parent_path, None)
+
+            # we append each field as spark [pyspark.sql.types.StructField] to our entity schema
             struct_fields.append(field_struct)
 
+        # fully processed that level (the same function may be called for nested elements)
+        # returning all of our [pyspark.sql.types.StructField] defining our Spark entity
         return struct_fields
 
-    def __load_supertype_object(self, ref_link, parent_path):
+    def __process_supertype(self, ref_link, parent_path=None):
         """
-        Some entities may be built as a supertype to other entities
-        Example: A customer is a supertype to a person entity
-        We load that entire referenced entity as we would
-        be loading any object, parsing json file into spark schema
-        :param ref_link: the link pointing to a JSON file
-        :param parent_path: the fully qualified name of our parent
-        :return: the spark StructType that defines our schema at that parent level
+        Some entities may be built as a supertype to other entities. e.g. A `customer` is a supertype to a `person`.
+        We load our referenced entity as we would be loading any object, parsing json file into spark schema
+        :param ref_link: the link pointing to a JSON file (must be in our same model directory)
+        :param parent_path: the fully qualified name of our parent that we can attach that supertype to (if any)
+        :return: the list of [pyspark.sql.types.StructField] defining our JSON supertype and all its underlying objects
         """
         ref_object = ref_link.split('/')[-1]
         ref_json_file = os.path.join(self.schema_directory, ref_object)
         ref_json_model = load_json(ref_json_file)
-        return self.__load_object(ref_json_model, parent_path)
+        return self.__process_object(ref_json_model, parent_path)
 
     def __process_field(self, field_name, is_nullable, field_properties, parent_path, parent_description):
         """
-        Process a JSON property (i.e. a field) given a name and a property object
-        A field may be a reference to a common object such as currency code, so recursion may be required
-        :param field_name: field name
+        Core business logic of a JSON field, we convert this field as spark schema and SQL constraints
+        A field may be a reference to different object, possibly in a different file.
+        A field may also be of complex type (i.e. object), requiring recursion.
+        :param field_name: field name (relative name)
         :param is_nullable: whether field is not mandatory
         :param field_properties: json properties of the field
         :param parent_path: fully qualified name of the parent object
         :param parent_description: description of the parent object
-        :return: The Spark DataType embedding our JSON field and its possible underlying objects
+        :return: The Spark [pyspark.sql.types.StructField] embedding our JSON field and its underlying objects
         """
+
         # as we go through different level of nested values, we must remember the fully qualified name of our field
         # this will be used for evaluating our constraints
-        field_path = build_field_path(field_name, parent_path)
+        field_path = get_field_path(field_name, parent_path)
 
         # as we support supertypes (employee extends person), we may have carried metadata over
         # whether a field is described or not, parent reference always takes precedence (more specific)
-        field_desc = build_field_desc(field_properties, parent_description)
+        field_desc = get_field_description(field_properties, parent_description)
 
         # fields may be described as a reference to different JSON models.
         if field_properties.get('$ref', None):
@@ -130,108 +157,97 @@ class JsonBuilder:
 
             # processing inline property
             ref_property = ref_json_model[ref_object]
-            return self.__process_field(field_name, is_nullable, ref_property, parent_path,
-                                        field_desc)
+            return self.__process_field(field_name, is_nullable, ref_property, parent_path, field_desc)
+
+        # processing property
+        field_type = field_properties.get('type', None)
+        if field_type == 'object':
+            return self.__process_objects(field_name, field_path, is_nullable, field_properties, field_desc)
+        elif field_type == "array":
+            return self.__process_arrays(field_name, field_path, is_nullable, field_properties, field_desc)
+        else:
+            # lower possible level of our schema hierarchy, fields are all  of atomic types
+            if field_type == "number" or field_type == "integer":
+                o = FieldNumber(field_name, field_path, is_nullable, field_properties, field_desc)
+            elif field_type == "boolean":
+                o = FieldBoolean(field_name, field_path, is_nullable, field_properties, field_desc)
+            elif field_type == "string":
+                o = FieldString(field_name, field_path, is_nullable, field_properties, field_desc)
+            else:
+                raise Exception("Unsupported type {} for field {}".format(field_type, field_path))
+
+            # update constraints
+            self.constraints.update(o.get_expectations())
+            # and return our structField
+            return o.get_struct_field()
+
+    def __process_objects(self, field_name, field_path, is_nullable, field_properties, field_desc):
+        """
+        JSON type objects are complex types and must be processed recursively to access each of their nested entities
+        :param field_name: the name of our field
+        :param field_path: the absolute path of our field that can be used for SQL expressions
+        :param is_nullable: whether the array is optional or not
+        :param field_properties: the JSON properties defining our array element
+        :param field_desc: the description of our field to attach to our metadata (may be inherited from parent)
+        :return: The Spark [pyspark.sql.types.StructField] embedding our JSON array
+        """
 
         # Specify default nullable constraints
         field_constraints = validate_nullable(field_path, is_nullable)
         self.constraints.update(field_constraints)
 
-        # processing property
-        field_type = field_properties.get('type', None)
-        if field_type == 'object':
-            # Nested field, we must read its underlying properties
-            # Return a complex struct type
-            struct = StructType(self.__load_object(field_properties, field_path))
-            struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
-            return struct
-        elif field_type == "array":
-            # Array type, we need to recursively read its underlying properties
-            nested_prp = field_properties['items']
-            nested_tpe = nested_prp['type']
-            nested_fmt = nested_prp.get('format', None)
-            self.constraints.update(validate_arrays(field_path, field_properties))
-            struct = ArrayType(self.__convert_type_array(nested_tpe, nested_fmt, nested_prp))
-            struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
-            return struct
-        else:
-            # lower level hierarchy, fields are atomic fields
-            return self.__process_atomic(field_name, field_path, is_nullable, field_type, field_properties, field_desc)
+        # Parsing our object nested schema
+        struct = StructType(self.__process_object(field_properties, field_path))
+        struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
+        return struct
 
-    def __process_atomic(self, field_name, field_path, is_nullable, field_type, field_properties, field_description):
+    def __process_arrays(self, field_name, field_path, is_nullable, field_properties, field_desc):
         """
-        Converting a JSON field into a Spark type and update our validation rules
-        Simple mapping exercise for atomic types (number, string, etc), this process becomes complex for nested entities
-        For entities of type object, we recursively parse object and map their respective types into StructTypes
-        For list, we recursively extract its underlying entities into an ArrayType
-        :param field_name: field name
-        :param field_path: fully qualified name
-        :param is_nullable: whether field is optional
-        :param field_type: field type
-        :param field_properties: json properties of the field
-        :param field_description: field description
-        :return: The Spark DataType embedding our highest granularity JSON field
+        Arrays are slightly more complex as we need to understand their types and process each of its
+        underlying entities (if any). As some arrays may be of complex types, we may have to load their referenced
+        JSON files and parse each of their nested entities
+        :param field_name: the name of our field
+        :param field_path: the absolute path of our field that can be used for SQL expressions
+        :param is_nullable: whether the array is optional or not
+        :param field_properties: the JSON properties defining our array element
+        :param field_desc: the description of our field to attach to our metadata (may be inherited from parent)
+        :return: The Spark [pyspark.sql.types.StructField] embedding our JSON array
         """
 
-        if field_type == "number":
-            o = LH4FSNumber(field_name, field_path, is_nullable, field_properties, field_description)
-            self.constraints.update(o.validate())
-            return o.convert()
+        # Specify default nullable constraints
+        field_constraints = validate_nullable(field_path, is_nullable)
+        self.constraints.update(field_constraints)
 
-        if field_type == "integer":
-            o = LH4FSInteger(field_name, field_path, is_nullable, field_properties, field_description)
-            self.constraints.update(o.validate())
-            return o.convert()
+        # Specify array specific constraints (minSize, maxSize, etc)
+        self.constraints.update(validate_arrays(field_path, field_properties))
 
-        if field_type == "boolean":
-            o = LH4FSBoolean(field_name, field_path, is_nullable, field_properties, field_description)
-            self.constraints.update(o.validate())
-            return o.convert()
+        # Parsing our array and its possible nested schema (for arrays of complex type)
+        struct = ArrayType(self.__get_array_type(field_properties['items']))
+        struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
+        return struct
 
-        if field_type == "string":
-            o = LH4FSString(field_name, field_path, is_nullable, field_properties, field_description)
-            self.constraints.update(o.validate())
-            return o.convert()
-
-        raise Exception("Unsupported type {} for field {}".format(field_type, field_path))
-
-    def __convert_type_array(self, field_type, field_format, field_properties):
+    def __get_array_type(self, field_properties):
         """
         Arrays may be of simple or complex types. We treat those as standard object property and retrieve the
-        equivalent spark data type. For complex types (i.e. object), we recursively access the underlying properties
-        and references (if not defined inline). Note that values of Arrays cannot be validated using expectations
-        :param field_type: the field JSON type
-        :param field_format: the field JSON format for entities of type string (e.g. date, date-time)
+        equivalent spark data type and references (if not defined inline).
         :param field_properties: the JSON properties defining our field
-        :return: The underlying spark StructType defining our ArrayType
+        :return: The underlying spark [pyspark.sql.types.DataType] defining our [pyspark.sql.types.ArrayType]
         """
 
-        if field_type == "object":
-            # Field is of a complex type, we need to access its underlying properties
-            nested_properties = field_properties['properties']
-            nested_fields = nested_properties.keys()
-            nested_required = set(field_properties['required'])
-            nested_struct_fields = []
-            for nested_field in nested_fields:
-                nested_field_nullable = nested_field not in nested_required
-                nested_property = nested_properties[nested_field]
-                nested_struct_field = self.__process_field(nested_field, nested_field_nullable, nested_property, None,
-                                                           None)
-                nested_struct_fields.append(nested_struct_field)
-            return StructType(nested_struct_fields)
+        if field_properties['type'] == "object":
+            # Array is of a complex type, we need to access its underlying properties, processing each of them
+            # as standard JSON field
+            a_properties = field_properties['properties']
+            a_fields = a_properties.keys()
+            a_fields_required = set(field_properties['required'])
+            a_fields_struct = []
+            for field in a_fields:
+                is_nullable = field not in a_fields_required
+                field_struct = self.__process_field(field, is_nullable, a_properties[field], None, None)
+                a_fields_struct.append(field_struct)
+            return StructType(a_fields_struct)
         else:
-            if field_type == 'number':
-                return DoubleType()
-            elif field_type == 'integer':
-                return IntegerType()
-            elif field_type == 'boolean':
-                return BooleanType()
-            elif field_type == 'string':
-                if field_format == 'date':
-                    return DateType()
-                elif field_format == 'date-time':
-                    return TimestampType()
-                else:
-                    return StringType()
-            else:
-                raise Exception('Unsupported array of type {}'.format(field_type))
+            # Array is of a simple type, let's find the corresponding spark [pyspark.sql.types.DataType]
+            field_format = field_properties.get('format', None)
+            field_type = field_properties.get('type', None)
+            return get_field_type(field_type, field_format)

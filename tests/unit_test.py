@@ -15,12 +15,12 @@ class IOTest(unittest.TestCase):
     def test_invalid_file(self):
         with self.assertRaises(Exception) as context:
             JsonBuilder(SCHEMA_DIR).build("foobar")
-        self.assertTrue('Could not find file' in str(context.exception))
+        self.assertTrue('is not a valid file' in str(context.exception))
 
     def test_invalid_schema(self):
         with self.assertRaises(Exception) as context:
             JsonBuilder(SCHEMA_DIR).build("common")
-        self.assertTrue('Can only process entities of type object' in str(context.exception))
+        self.assertTrue('Can only process JSON entities of type object' in str(context.exception))
 
 
 class ClassTest(unittest.TestCase):
