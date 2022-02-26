@@ -2,7 +2,7 @@ import io
 import json
 import os.path
 import unittest
-from lh4fs.schema import JsonBuilder
+from lh4fs.schema import JsonBuilder, LegendBuilder
 
 from . import (
     SCHEMA_DIR,
@@ -11,6 +11,11 @@ from . import (
 
 
 class IOTest(unittest.TestCase):
+
+    def test_invalid_dir(self):
+        with self.assertRaises(Exception) as context:
+            JsonBuilder("foobar").build("foobar")
+        self.assertTrue('is not a valid directory' in str(context.exception))
 
     def test_invalid_file(self):
         with self.assertRaises(Exception) as context:
@@ -21,6 +26,11 @@ class IOTest(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             JsonBuilder(SCHEMA_DIR).build("common")
         self.assertTrue('Can only process JSON entities of type object' in str(context.exception))
+
+    def test_invalid_parser(self):
+        with self.assertRaises(Exception) as context:
+            LegendBuilder(SCHEMA_DIR).build("common")
+        self.assertTrue('Not implemented' in str(context.exception))
 
 
 class ClassTest(unittest.TestCase):

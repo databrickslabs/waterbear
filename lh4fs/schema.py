@@ -65,7 +65,7 @@ class JsonBuilder(Builder):
         # In addition to the schema, we also return all expectations
         return schema, self.constraints
 
-    def __process_object(self, entity, parent_path=None):
+    def __process_object(self, entity, parent_path=None) -> [StructField]:
         """
         Core business logic of a JSON entity, we process a given entity from a JSON object
         An entity contains metadata (e.g. description), required field definition and property value
@@ -106,7 +106,7 @@ class JsonBuilder(Builder):
         # returning all of our [pyspark.sql.types.StructField] defining our Spark entity
         return struct_fields
 
-    def __process_supertype(self, ref_link, parent_path=None):
+    def __process_supertype(self, ref_link, parent_path=None) -> [StructField]:
         """
         Some entities may be built as a supertype to other entities. e.g. A `customer` is a supertype to a `person`.
         We load our referenced entity as we would be loading any object, parsing json file into spark schema
@@ -119,7 +119,8 @@ class JsonBuilder(Builder):
         ref_json_model = load_json(ref_json_file)
         return self.__process_object(ref_json_model, parent_path)
 
-    def __process_field(self, field_name, is_nullable, field_properties, parent_path, parent_description):
+    def __process_field(self, field_name, is_nullable, field_properties, parent_path,
+                        parent_description) -> StructField:
         """
         Core business logic of a JSON field, we convert this field as spark schema and SQL constraints
         A field may be a reference to different object, possibly in a different file.
@@ -142,46 +143,47 @@ class JsonBuilder(Builder):
 
         # fields may be described as a reference to different JSON models.
         if field_properties.get('$ref', None):
+            return self.__process_field_reference(field_name, is_nullable, field_properties, parent_path, field_desc)
 
-            # retrieve the name of the Json file and
-            # the name of the entity to load
-            field_ref = field_properties['$ref']
-            ref_object = field_ref.split('/')[-1]
-            ref_json = field_ref.split('#')[0].split('/')[-1]
+        # processing property of type object (nested element)
+        if field_properties['type'] == 'object':
+            return self.__process_field_object(field_name, field_path, is_nullable, field_properties, field_desc)
 
-            # parsing json
-            ref_json_file = os.path.join(self.schema_directory, ref_json)
-            ref_json_model = load_json(ref_json_file)
-            if ref_object not in ref_json_model.keys():
-                raise Exception("Referencing non existing property {}".format(ref_object))
+        # processing property of type array (could be of complex type)
+        if field_properties['type'] == "array":
+            return self.__process_field_array(field_name, field_path, is_nullable, field_properties, field_desc)
 
-            # processing inline property
-            ref_property = ref_json_model[ref_object]
-            return self.__process_field(field_name, is_nullable, ref_property, parent_path, field_desc)
+        # processing property at lowest granularity (simple type, no nested elements)
+        return self.__process_field_atomic(field_name, field_path, is_nullable, field_properties, field_desc)
 
-        # processing property
-        field_type = field_properties.get('type', None)
-        if field_type == 'object':
-            return self.__process_objects(field_name, field_path, is_nullable, field_properties, field_desc)
-        elif field_type == "array":
-            return self.__process_arrays(field_name, field_path, is_nullable, field_properties, field_desc)
-        else:
-            # lower possible level of our schema hierarchy, fields are all  of atomic types
-            if field_type == "number" or field_type == "integer":
-                o = FieldNumber(field_name, field_path, is_nullable, field_properties, field_desc)
-            elif field_type == "boolean":
-                o = FieldBoolean(field_name, field_path, is_nullable, field_properties, field_desc)
-            elif field_type == "string":
-                o = FieldString(field_name, field_path, is_nullable, field_properties, field_desc)
-            else:
-                raise Exception("Unsupported type {} for field {}".format(field_type, field_path))
+    def __process_field_reference(self, field_name, is_nullable, field_properties, parent_path,
+                                  field_desc) -> StructField:
+        """
+        A JSON element might be a reference to another field, eventually to a different JSON file
+        :param field_name: the name of the JSON entity
+        :param is_nullable: whether this field is optional
+        :param field_properties: the JSON properties defining this object
+        :param parent_path: the absolute path of that field for accessing via SQL
+        :param field_desc: the description of the field
+        :return: The Spark [pyspark.sql.types.StructField] embedding our referenced JSON entity
+        """
+        # retrieve the name of the Json file and
+        # the name of the entity to load
+        field_ref = field_properties['$ref']
+        ref_object = field_ref.split('/')[-1]
+        ref_json = field_ref.split('#')[0].split('/')[-1]
 
-            # update constraints
-            self.constraints.update(o.get_expectations())
-            # and return our structField
-            return o.get_struct_field()
+        # parsing json
+        ref_json_file = os.path.join(self.schema_directory, ref_json)
+        ref_json_model = load_json(ref_json_file)
+        if ref_object not in ref_json_model.keys():
+            raise Exception("Referencing non existing property {}".format(ref_object))
 
-    def __process_objects(self, field_name, field_path, is_nullable, field_properties, field_desc):
+        # processing inline property
+        ref_property = ref_json_model[ref_object]
+        return self.__process_field(field_name, is_nullable, ref_property, parent_path, field_desc)
+
+    def __process_field_object(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
         """
         JSON type objects are complex types and must be processed recursively to access each of their nested entities
         :param field_name: the name of our field
@@ -201,7 +203,32 @@ class JsonBuilder(Builder):
         struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
         return struct
 
-    def __process_arrays(self, field_name, field_path, is_nullable, field_properties, field_desc):
+    def __process_field_atomic(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
+        """
+        Lowest level hierarchy, our field is of simple type that can be converted to a spark object as-is
+        :param field_name: the name of our field
+        :param field_path: the absolute path of our field that can be used for SQL expressions
+        :param is_nullable: whether the array is optional or not
+        :param field_properties: the JSON properties defining our array element
+        :param field_desc: the description of our field to attach to our metadata (may be inherited from parent)
+        :return: The Spark [pyspark.sql.types.StructField] embedding our JSON element
+        """
+        field_type = field_properties['type']
+        if field_type == "number" or field_type == "integer":
+            o = FieldNumber(field_name, field_path, is_nullable, field_properties, field_desc)
+        elif field_type == "boolean":
+            o = FieldBoolean(field_name, field_path, is_nullable, field_properties, field_desc)
+        elif field_type == "string":
+            o = FieldString(field_name, field_path, is_nullable, field_properties, field_desc)
+        else:
+            raise Exception("Unsupported type {} for field {}".format(field_type, field_path))
+
+        # update constraints
+        self.constraints.update(o.get_expectations())
+        # and return our structField
+        return o.get_struct_field()
+
+    def __process_field_array(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
         """
         Arrays are slightly more complex as we need to understand their types and process each of its
         underlying entities (if any). As some arrays may be of complex types, we may have to load their referenced
@@ -226,7 +253,7 @@ class JsonBuilder(Builder):
         struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
         return struct
 
-    def __get_array_type(self, field_properties):
+    def __get_array_type(self, field_properties) -> DataType:
         """
         Arrays may be of simple or complex types. We treat those as standard object property and retrieve the
         equivalent spark data type and references (if not defined inline).
