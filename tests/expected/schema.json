@@ -1,0 +1,93 @@
+{
+   "fields": [
+      {
+         "metadata": {
+            "desc": "Employee ID"
+         },
+         "name": "id",
+         "nullable": false,
+         "type": "integer"
+      },
+      {
+         "metadata": {
+            "desc": "Employee personal information"
+         },
+         "name": "person",
+         "nullable": false,
+         "type": {
+            "fields": [
+               {
+                  "metadata": {
+                     "desc": "A person name, first or last"
+                  },
+                  "name": "first_name",
+                  "nullable": true,
+                  "type": "string"
+               },
+               {
+                  "metadata": {
+                     "desc": "person last name"
+                  },
+                  "name": "last_name",
+                  "nullable": true,
+                  "type": "string"
+               },
+               {
+                  "metadata": {
+                     "desc": "Person birth date"
+                  },
+                  "name": "birth_date",
+                  "nullable": true,
+                  "type": "date"
+               },
+               {
+                  "metadata": {
+                     "desc": "employee nickname"
+                  },
+                  "name": "username",
+                  "nullable": true,
+                  "type": "string"
+               }
+            ],
+            "type": "struct"
+         }
+      },
+      {
+         "metadata": {
+            "desc": "Employee first day of employment"
+         },
+         "name": "joined_date",
+         "nullable": true,
+         "type": "date"
+      },
+      {
+         "metadata": {
+            "desc": "Number of high fives"
+         },
+         "name": "high_fives",
+         "nullable": true,
+         "type": "double"
+      },
+      {
+         "metadata": {
+            "desc": "Employee skills"
+         },
+         "name": "skills",
+         "nullable": true,
+         "type": {
+            "containsNull": true,
+            "elementType": "string",
+            "type": "array"
+         }
+      },
+      {
+         "metadata": {
+            "desc": "Employee role"
+         },
+         "name": "role",
+         "nullable": true,
+         "type": "string"
+      }
+   ],
+   "type": "struct"
+}

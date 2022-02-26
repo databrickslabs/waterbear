@@ -21,13 +21,24 @@ types are fully evaluated (e.g. a date should be treated as a date object and no
 Using LH4FS pyspark module, we retrieve the spark schema required to process a given entity (e.g. derivative) 
 that we apply on batch or on real-time (e.g. over a stream of raw records). This process is called data schematization.
 
-```json
-{"metadata":{"desc":"Employee ID"},"name":"id","nullable":false,"type":"integer"}
-{"metadata":{"desc":"Employee personal information"},"name":"person","nullable":false,"type":{"fields":[{"metadata":{"desc":"A person name, first or last"},"name":"first_name","nullable":true,"type":"string"},{"metadata":{"desc":"person last name"},"name":"last_name","nullable":true,"type":"string"},{"metadata":{"desc":"Person birth date"},"name":"birth_date","nullable":true,"type":"date"},{"metadata":{"desc":"employee nickname"},"name":"username","nullable":true,"type":"string"}],"type":"struct"}}
-{"metadata":{"desc":"Employee first day of employment"},"name":"joined_date","nullable":true,"type":"date"}
-{"metadata":{"desc":"Number of high fives"},"name":"high_fives","nullable":true,"type":"double"}
-{"metadata":{"desc":"Employee skills"},"name":"skills","nullable":true,"type":{"containsNull":true,"elementType":"string","type":"array"}}
-{"metadata":{"desc":"Employee role"},"name":"role","nullable":true,"type":"string"}
+```
+Employee ID
+StructField(id,IntegerType,false)
+
+Employee personal information
+StructField(person,StructType(List(StructField(first_name,StringType,true),StructField(last_name,StringType,true),StructField(birth_date,DateType,true),StructField(username,StringType,true))),false)
+
+Employee first day of employment
+StructField(joined_date,DateType,true)
+
+Number of high fives
+StructField(high_fives,DoubleType,true)
+
+Employee skills
+StructField(skills,ArrayType(StringType,true),true)
+
+Employee role
+StructField(role,StringType,true)
 ```
 
 Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
