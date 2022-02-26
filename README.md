@@ -1,44 +1,72 @@
 ![](images/lakehouse-for-financial-services.jpeg)
 
-Following the launch of the [Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services), 
-we created that project to convert data models expressed as JSON schema into spark Schema and Delta Live Tables expectations.
+*Given an enterprise data model, we programmatically convert each entity into its spark schema 
+equivalent, extract metadata and derive tables expectations as SQL expressions. This critical foundation allows financial
+services organizations to automatically provision 
+[Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with high governance
+standards and minimum development overhead*
 
-## Usage
+___
 
-We specify the name of the entity to get the data model for as well as the directory (distributed file storage) where 
-our JSON schema are stored. 
+## Enterprise data models
+
+This project was designed with industry standards in mind, therefore compatible with multiple data formats and in line
+with the latest developments across the financial services industry.
+
+### JSON Schema
+
+Adhering to strict industry standards ([JSON Schema](https://json-schema.org/)), our project is compatible the FIRE 
+initiative led by [Suade Labs](https://suade.org/) (although would support any generic JSON schema).
+The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
+between regulatory systems in finance, supported by the European Commission, the Open Data Institute and 
+the Open Data Incubator. We can easily read spark schema and delta expectations from our `collateral` entity.
 
 ```python
 from lh4fs.schema import JsonBuilder
-schema, constraints = JsonBuilder('/path/to/json/models').build("employee")
+schema, constraints = JsonBuilder('fire/model').build("collateral")
 ```
 
-### Retrieve schema and constraints
+### LEGEND Schema
+
+Open sourced by Goldman Sachs and maintained by the FINOS community, the [Legend](https://legend.finos.org/) framework 
+is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
+their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
+collaborate in the creation to enterprise data models with strict governance standards and software delivery best 
+practices. Pending code [approval](https://github.com/finos-labs/legend-delta), the LEGEND data model will be fully 
+supported, reading entities as follows. 
+
+```python
+from lh4fs.schema import LegendBuilder
+schema, constraints = LegendBuilder('legend/model').build("derivative")
+```
+
+## Execution
 
 Even though records may sometimes "look" structured (e.g. JSON files), enforcing a schema is not just a good practice; 
 in enterprise settings, it guarantees any missing field is still expected, unexpected fields are discarded and data 
 types are fully evaluated (e.g. a date should be treated as a date object and not a string). 
-Using LH4FS pyspark module, we retrieve the spark schema required to process a given entity (e.g. derivative) 
-that we apply on batch or on real-time (e.g. over a stream of raw records). This process is called data schematization.
+We retrieve the spark schema required to process a given entity (e.g. collateral, derivative) 
+that we apply on batch or on real-time (e.g. over a stream of raw records).
 
 ```
-Employee ID
 StructField(id,IntegerType,false)
-
-Employee personal information
 StructField(person,StructType(List(StructField(first_name,StringType,true),StructField(last_name,StringType,true),StructField(birth_date,DateType,true),StructField(username,StringType,true))),false)
-
-Employee first day of employment
 StructField(joined_date,DateType,true)
-
-Number of high fives
 StructField(high_fives,DoubleType,true)
-
-Employee skills
 StructField(skills,ArrayType(StringType,true),true)
-
-Employee role
 StructField(role,StringType,true)
+```
+
+Given the above, one can enforce schema through native spark operations
+
+```python
+_ = (
+    spark
+        .read
+        .format('csv')  # standard spark formats
+        .schema(schema) # enforcing our data model
+        .load('csv_files')
+)
 ```
 
 Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
@@ -93,17 +121,6 @@ def silver():
 ```
 
 ![](images/pipeline_processing.png)
-
-
-## Roadmap
-
-We plan to integrate the legend stack following our contribution to [FINOS](https://github.com/finos-labs/legend-delta).
-We aim at keeping some sort of consistency with JSON models as follows
-
-```python
-from lh4fs.schema import LegendBuilder
-schema, constraints = LegendBuilder('/path/to/legend/models').build("employee")
-```
 
 ## Project support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
