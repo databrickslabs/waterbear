@@ -15,11 +15,12 @@ enforcing enterprise data models that brings life to an industry regulated data 
 ## Enterprise data models
 
 Given an enterprise data model, we automatically convert an entity into its spark schema equivalent, extract metadata, 
-derive tables expectations as SQL expressions and provision data pipelines that accelerate production workflows.
-Such foundations allow financial services institutions to bootstrap their 
+derive tables expectations as SQL expressions and provision data pipelines that accelerate development of production 
+workflows. Such a foundation allows financial services institutions to bootstrap their 
 [Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with 
-highly resilient data pipelines and minimum development overhead. Designed with industry standards in mind, this project
-is compatible with multiple data formats and follows the latest developments across the financial services industry.
+resilient data pipelines and minimum development overhead. Designed with industry standards in mind, this project
+is compatible with multiple data formats and follows the latest trends and developments observed across the financial 
+services industry.
 
 ### JSON Schema
 
