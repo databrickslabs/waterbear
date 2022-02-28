@@ -1,4 +1,29 @@
+# ignore IntelliJ/PyCharm/VSCode IDE files
 .idea
-venv
+*.iml
+.vscode
+
+# coverage files
 .coverage
-__pycache__
+coverage.xml
+
+# local delta tables
+**/spark-warehouse
+
+# ignore build files
+**/build
+**/dist
+**/htmlcov
+**/waterbear.egg-info
+**/dbl_waterbear.egg-info
+
+## Python related files
+*.pyc
+**/__pycache__
+
+# ignore virtual environments
+python/venv
+venv
+
+# other misc ignore
+.DS_Store
