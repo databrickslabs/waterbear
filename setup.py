@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setuptools.setup(
     name='waterbear',
-    version='1.0',
+    version='0.1',
     author='Antoine Amend',
     author_email='antoine.amend@databricks.com',
     description='Automated provisioning of an industry Lakehouse with enterprise data model',
@@ -14,5 +14,6 @@ setuptools.setup(
     classifiers=[
         'Programming Language :: Python :: 3',
         'Operating System :: OS Independent',
+        'License :: Other/Proprietary License',
     ],
 )
