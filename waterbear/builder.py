@@ -1,4 +1,4 @@
-from waterbear.utils.util import *
+from .utils.util import *
 
 
 class Builder:
