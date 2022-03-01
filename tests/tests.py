@@ -6,11 +6,11 @@ from waterbear.builder import *
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from . import (
-    SCHEMA_DIR,
-    DATA_DIR,
-    EXPECTED_DIR
-)
+
+HOME = os.path.join(os.path.dirname(__file__))
+SCHEMA_DIR = os.path.join(HOME, 'schema')
+DATA_DIR = os.path.join(HOME, 'data')
+EXPECTED_DIR = os.path.join(HOME, 'expected')
 
 
 def dataframe_stub(df, limit=20):
