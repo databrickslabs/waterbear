@@ -33,7 +33,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install coverage
-          coverage run -m unittest discover -s tests -p '*_tests.py'
+          coverage run -m unittest discover -s tests -p 'tests.py'
           coverage xml
           
       - name: Publish test coverage
