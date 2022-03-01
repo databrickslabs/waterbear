@@ -2,8 +2,7 @@ import io
 import os.path
 import unittest
 import logging
-from waterbear.builder_json import *
-from waterbear.builder_legend import *
+from waterbear.builder import *
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 

@@ -33,7 +33,7 @@ the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubat
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
-from waterbear.builder_json import JsonBuilder
+from waterbear.builder import JsonBuilder
 schema, constraints = JsonBuilder('fire/model').build("collateral")
 ```
 
@@ -48,7 +48,7 @@ practices. Pending our code contribution [approval](https://github.com/finos-lab
 we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model example below
 
 ```python
-from waterbear.builder_legend import LegendBuilder
+from waterbear.builder import LegendBuilder
 schema, constraints = LegendBuilder('legend/model').build("derivative")
 ```
 
