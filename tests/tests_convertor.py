@@ -1,8 +1,7 @@
 import io
 import os.path
 import unittest
-import logging
-from waterbear.builder import *
+from waterbear.convertor import *
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
@@ -21,24 +20,24 @@ class BuilderInterfaceTest(unittest.TestCase):
 
     def test_invalid_dir(self):
         with self.assertRaises(Exception) as context:
-            JsonWaterbear("foobar").build("foobar")
+            JsonSchemaConvertor("foobar").convert("foobar")
         self.assertTrue('is not a valid directory' in str(context.exception))
 
     def test_invalid_file(self):
         with self.assertRaises(Exception) as context:
-            JsonWaterbear(SCHEMA_DIR).build("foobar")
+            JsonSchemaConvertor(SCHEMA_DIR).convert("foobar")
         self.assertTrue('is not a valid file' in str(context.exception))
 
     def test_invalid_schema(self):
         with self.assertRaises(Exception) as context:
-            JsonWaterbear(SCHEMA_DIR).build("common")
+            JsonSchemaConvertor(SCHEMA_DIR).convert("common")
         self.assertTrue('Can only process JSON entities of type object' in str(context.exception))
 
 
 class UtilStaticTest(unittest.TestCase):
 
     def test_valid_parser(self):
-        JsonWaterbear(SCHEMA_DIR).build("dummy")
+        JsonSchemaConvertor(SCHEMA_DIR).convert("dummy")
         self.assertTrue(True, 'No exception should be raised')
 
     def test_load_json_valid(self):
@@ -313,33 +312,35 @@ class UtilFieldClassTest(unittest.TestCase):
 class ParserClassTest(unittest.TestCase):
 
     def test_schema(self):
-        schema, _ = JsonWaterbear(SCHEMA_DIR).build("employee")
-        for field in schema.fields:
-            print(field)
+        schema, _ = JsonSchemaConvertor(SCHEMA_DIR).convert("employee")
         with open(os.path.join(EXPECTED_DIR, 'schema.json'), 'r') as f:
             actual = json.loads(io.StringIO(schema.json()).read())
             expected = json.loads(f.read())
             self.assertEqual(expected, actual, 'Derived spark schema should be correct')
 
     def test_constraints(self):
-        _, actual = JsonWaterbear(SCHEMA_DIR).build("employee")
+        _, actual = JsonSchemaConvertor(SCHEMA_DIR).convert("employee")
         expected = {
-            '[`id`] NULLABLE': '`id` IS NOT NULL',
-            '[`person`.`username`] MATCH': "`person`.`username` IS NULL OR `person`.`username` RLIKE '^[a-z0-9]{2,}$'",
-            '[`person`] NULLABLE': '`person` IS NOT NULL',
-            '[`high_fives`] VALUE': '`high_fives` IS NULL OR `high_fives` BETWEEN 1.0 AND 300.0',
-            '[`skills`] SIZE': '`skills` IS NULL OR SIZE(`skills`) >= 1',
+            '[`id`] NULLABLE': "`id` IS NOT NULL",
+            '[`id`] VALUE': "`id` IS NULL OR `id` >= 1.0",
+            '[`joined_date`] VALUE': "`joined_date` IS NULL OR `joined_date` >= '2016-01-01'",
+            '[`person`.`birth_date`] NULLABLE': '`person`.`birth_date` IS NOT NULL',
+            '[`person`.`birth_date`] VALUE': "`person`.`birth_date` IS NULL "
+                                             "OR `person`.`birth_date` BETWEEN '1970-01-01' AND '2002-01-01'",
+            '[`person`.`first_name`] NULLABLE': '`person`.`first_name` IS NOT NULL',
+            '[`person`.`last_name`] NULLABLE': '`person`.`last_name` IS NOT NULL',
+            '[`person`.`username`] MATCH': "`person`.`username` IS NULL OR `person`.`username` RLIKE '^[a-z0-9]{8}$'",
+            '[`person`] NULLABLE': "`person` IS NOT NULL",
+            '[`high_fives`] VALUE': "`high_fives` IS NULL OR `high_fives` BETWEEN 1.0 AND 300.0",
+            '[`skills`] SIZE': "`skills` IS NULL OR SIZE(`skills`) >= 1",
             '[`role`] VALUE': "`role` IS NULL OR `role` IN ('SA', 'CSE', 'SSA', 'RSA')"
         }
-        print(json.dumps(actual, indent=2))
         self.assertEqual(expected, actual, 'Derived spark expectations should be correct')
 
 
 class SparkTest(unittest.TestCase):
 
     def setUp(self):
-        logger = logging.getLogger('py4j')
-        logger.setLevel(logging.WARN)
         self.spark = SparkSession \
             .builder \
             .appName("UNIT_TEST") \
@@ -350,13 +351,13 @@ class SparkTest(unittest.TestCase):
         self.spark.stop()
 
     def test_schema_apply(self):
-        schema, constraints = JsonWaterbear(SCHEMA_DIR).build("employee")
+        schema, constraints = JsonSchemaConvertor(SCHEMA_DIR).convert("employee")
         df = self.spark.read.format("json").schema(schema).load(DATA_DIR)
         df.show()
         self.assertEqual(100, df.count())
 
     def test_constraints_apply(self):
-        schema, constraints = JsonWaterbear(SCHEMA_DIR).build("employee")
+        schema, constraints = JsonSchemaConvertor(SCHEMA_DIR).convert("employee")
         constraint_exprs = [F.expr(c) for c in constraints.values()]
         constraint_names = [F.lit(c) for c in constraints.keys()]
 
@@ -375,10 +376,14 @@ class SparkTest(unittest.TestCase):
         df.show()
         actual = dataframe_stub(df)
         expected = "\n".join([
+            "('[`id`] VALUE', 1)",
             "('[`high_fives`] VALUE', 1)",
             "('[`person`] NULLABLE', 1)",
-            "('[`person`.`username`] MATCH', 1)",
+            "('[`person`.`username`] MATCH', 70)",
             "('[`role`] VALUE', 1)",
+            "('[`person`.`birth_date`] NULLABLE', 1)",
+            "('[`person`.`last_name`] NULLABLE', 1)",
+            "('[`person`.`first_name`] NULLABLE', 1)",
             "('[`skills`] SIZE', 1)",
             "('[`id`] NULLABLE', 1)"
         ])
