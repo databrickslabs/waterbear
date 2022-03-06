@@ -2,7 +2,7 @@
   <img src="images/waterbear-small.png" width="300px"/>
 </p>
 
-*Tardigrades can be found in milder environments such as lakes, ponds and meadows, often living near lake houses. 
+*Tardigrades can be found in milder environments such as lakes, ponds and meadows, often living near 'lakehouse'. 
 Though these species are disarmingly cute, they are also nearly indestructible and can survive in harsh 
 environments like outer space. This project gives life to the smallest fully functional data processing unit with the 
 highest degrees of resilience and governance standards. We coded our tardigrades to carry the burden of 
@@ -110,6 +110,26 @@ def silver():
 ```
 
 ![](images/pipeline_processing.png)
+
+## Testing
+
+For integration testing, we also provide users with the ability to generate records that match a given schema and 
+complies with basic expectations (pattern matching is not supported).
+
+```python
+from waterbear.generator import JsonRecordGenerator
+xs = JsonRecordGenerator('fire/model').generate("collateral", 5)
+for x in xs:
+    print(x)
+```
+
+```json
+{"id": 6867, "person": {"first_name": "vqgjldqqorklmupxibsrdyjw", "last_name": "vtsnbjuscbkvxyfdxrb", "birth_date": "2001-07-21"}, "skills": ["R"]}
+{"id": 3119, "person": {"first_name": "vp", "last_name": "dgipl", "birth_date": "1972-03-23"}, "high_fives": 71, "skills": ["SCALA"]}
+{"id": 4182, "person": {"first_name": "ijlzxxpv", "last_name": "ldpnnkohf", "birth_date": "1982-11-10"}, "joined_date": "2018-06-29", "skills": ["R"]}
+{"id": 4940, "person": {"first_name": "lhklebpkcxp", "last_name": "jir", "birth_date": "1998-01-06"}, "high_fives": 213, "skills": ["SQL"], "role": "RSA"}
+{"id": 5920, "person": {"first_name": "njadmuflxqbzc", "last_name": "arggdbaynulumrchreblfvxfe", "birth_date": "1997-06-26", "username": "snuafihfatyf"}, "high_fives": 105, "skills": ["PYTHON"], "role": "SA"}
+```
 
 ## Using the Project
 
