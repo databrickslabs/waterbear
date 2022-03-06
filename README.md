@@ -33,23 +33,8 @@ the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubat
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
-from waterbear.builder import JsonBuilder
-schema, constraints = JsonBuilder('fire/model').build("collateral")
-```
-
-### LEGEND Schema
-
-[Open sourced by Goldman Sachs](https://www.finos.org/press/goldman-sachs-open-sources-its-data-modeling-platform-through-finos) 
-and maintained by the [Finos](https://www.finos.org/) community, the [Legend](https://legend.finos.org/) framework 
-is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
-their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
-collaborate in the creation of enterprise data models with strict governance standards and software delivery best 
-practices. Pending our code contribution [approval](https://github.com/finos-labs/legend-delta) to the Finos community, 
-we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model example below
-
-```python
-from waterbear.builder import LegendBuilder
-schema, constraints = LegendBuilder('legend/model').build("derivative")
+from waterbear.builder import JsonWaterbear
+schema, constraints = JsonWaterbear('fire/model').build("collateral")
 ```
 
 ## Execution
@@ -108,7 +93,7 @@ def bronze():
     return (
         spark
             .readStream
-            .format('csv')   # we read standard sources
+            .format('csv')  # we read standard sources
             .schema(schema)  # and enforce schema
             .build('/path/to/data/files')
     )

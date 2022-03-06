@@ -21,29 +21,24 @@ class BuilderInterfaceTest(unittest.TestCase):
 
     def test_invalid_dir(self):
         with self.assertRaises(Exception) as context:
-            JsonBuilder("foobar").build("foobar")
+            JsonWaterbear("foobar").build("foobar")
         self.assertTrue('is not a valid directory' in str(context.exception))
 
     def test_invalid_file(self):
         with self.assertRaises(Exception) as context:
-            JsonBuilder(SCHEMA_DIR).build("foobar")
+            JsonWaterbear(SCHEMA_DIR).build("foobar")
         self.assertTrue('is not a valid file' in str(context.exception))
 
     def test_invalid_schema(self):
         with self.assertRaises(Exception) as context:
-            JsonBuilder(SCHEMA_DIR).build("common")
+            JsonWaterbear(SCHEMA_DIR).build("common")
         self.assertTrue('Can only process JSON entities of type object' in str(context.exception))
-
-    def test_invalid_parser(self):
-        with self.assertRaises(Exception) as context:
-            LegendBuilder(SCHEMA_DIR).build("employee")
-        self.assertTrue('Not implemented' in str(context.exception))
 
 
 class UtilStaticTest(unittest.TestCase):
 
     def test_valid_parser(self):
-        JsonBuilder(SCHEMA_DIR).build("dummy")
+        JsonWaterbear(SCHEMA_DIR).build("dummy")
         self.assertTrue(True, 'No exception should be raised')
 
     def test_load_json_valid(self):
@@ -318,7 +313,7 @@ class UtilFieldClassTest(unittest.TestCase):
 class ParserClassTest(unittest.TestCase):
 
     def test_schema(self):
-        schema, _ = JsonBuilder(SCHEMA_DIR).build("employee")
+        schema, _ = JsonWaterbear(SCHEMA_DIR).build("employee")
         for field in schema.fields:
             print(field)
         with open(os.path.join(EXPECTED_DIR, 'schema.json'), 'r') as f:
@@ -327,7 +322,7 @@ class ParserClassTest(unittest.TestCase):
             self.assertEqual(expected, actual, 'Derived spark schema should be correct')
 
     def test_constraints(self):
-        _, actual = JsonBuilder(SCHEMA_DIR).build("employee")
+        _, actual = JsonWaterbear(SCHEMA_DIR).build("employee")
         expected = {
             '[`id`] NULLABLE': '`id` IS NOT NULL',
             '[`person`.`username`] MATCH': "`person`.`username` IS NULL OR `person`.`username` RLIKE '^[a-z0-9]{2,}$'",
@@ -355,13 +350,13 @@ class SparkTest(unittest.TestCase):
         self.spark.stop()
 
     def test_schema_apply(self):
-        schema, constraints = JsonBuilder(SCHEMA_DIR).build("employee")
+        schema, constraints = JsonWaterbear(SCHEMA_DIR).build("employee")
         df = self.spark.read.format("json").schema(schema).load(DATA_DIR)
         df.show()
         self.assertEqual(100, df.count())
 
     def test_constraints_apply(self):
-        schema, constraints = JsonBuilder(SCHEMA_DIR).build("employee")
+        schema, constraints = JsonWaterbear(SCHEMA_DIR).build("employee")
         constraint_exprs = [F.expr(c) for c in constraints.values()]
         constraint_names = [F.lit(c) for c in constraints.keys()]
 

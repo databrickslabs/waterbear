@@ -1,7 +1,7 @@
-from .utils.util import *
+from waterbear.utils.util import *
 
 
-class Builder:
+class Waterbear:
     """
     Common interface for our project
     User will have to specify a directory on disk where models might be stored
@@ -16,16 +16,7 @@ class Builder:
         raise Exception('Not implemented')
 
 
-class LegendBuilder(Builder):
-    """
-    We plan to extend our framework to support multiple data model formats, including Legend
-    given our recent contribution to [FINOS LABS](https://github.com/finos-labs/legend-delta)
-    """
-    def __init__(self, schema_directory=None):
-        super().__init__(schema_directory)
-
-
-class JsonBuilder(Builder):
+class JsonWaterbear(Waterbear):
     """
     This implementation follows JSON schema [standards](https://json-schema.org/).
     Please refer to JSON schema specs for more information about supported data types
