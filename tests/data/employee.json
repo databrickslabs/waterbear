@@ -6,7 +6,7 @@
 {"id":6,"person":{"first_name":"Rob","last_name":"Giraudel","birth_date":"1982-10-15","username":"rgiraudel24"},"joined_date":"2021-05-08","high_fives":40,"skills":[],"role":"SSA"}
 {"id":7,"person":{"first_name":"Aldrich","last_name":"Martinets","birth_date":"1981-08-09","username":"amartinetse"},"joined_date":"2021-12-29","high_fives":45,"skills":["SQL"],"role":"SA"}
 {"id":8,"person":{"first_name":"Anton","last_name":"Mathonnet","birth_date":"1983-03-19","username":"amathonnet1k"},"joined_date":"2020-05-01","high_fives":94,"skills":["SQL"],"role":"RSA"}
-{"id":9,"person":{"first_name":"Tandi","last_name":"Cominotti","birth_date":"1983-09-21","username":"tcominotti1y"},"joined_date":"2020-05-28","high_fives":45,"skills":["SCALA"],"role":"RSA"}
+{"id":-1,"person":{"first_name":"Tandi","last_name":"Cominotti","birth_date":"1983-09-21","username":"tcominotti1y"},"joined_date":"2020-05-28","high_fives":45,"skills":["SCALA"],"role":"RSA"}
 {"id":10,"person":{"first_name":"Shadow","last_name":"Medgewick","birth_date":"1982-02-25","username":"smedgewickj"},"joined_date":"2021-07-18","high_fives":70,"skills":["SQL"],"role":"CSE"}
 {"id":11,"person":{"first_name":"Zarla","last_name":"Skotcher","birth_date":"1989-05-26","username":"zskotcher1z"},"joined_date":"2020-05-25","high_fives":74,"skills":["PYTHON","SQL"],"role":"RSA"}
 {"id":12,"person":{"first_name":"Harlen","last_name":"Micka","birth_date":"1980-03-10","username":"hmicka2a"},"joined_date":"2021-12-20","high_fives":26,"skills":["PYTHON","SCALA"],"role":"SA"}

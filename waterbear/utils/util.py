@@ -1,12 +1,86 @@
 import os
 import json
+import uuid
+
 from pyspark.sql.types import *
+import random
+import datetime
+import string
 
 
 class Schema:
     def __init__(self, schema, constraints):
         self.schema = schema
         self.constraints = constraints
+
+
+def generate_integer(minimum, maximum):
+    if not minimum and minimum != 0:
+        minimum = 0
+    if not maximum and maximum != 0:
+        maximum = 9999
+    return random.randint(minimum, maximum)
+
+
+def generate_number(minimum, maximum):
+    if not minimum and minimum != 0:
+        minimum = 0
+    if not maximum and maximum != 0:
+        maximum = 1
+    return random.uniform(minimum, maximum)
+
+
+def generate_date(minimum, maximum):
+    if not minimum:
+        minimum = datetime.datetime(1970, 1, 1)
+    if not maximum:
+        maximum = datetime.datetime(2025, 1, 1)
+    time_between_dates = maximum - minimum
+    days_between_dates = time_between_dates.days
+    random_number_of_days = random.randrange(days_between_dates)
+    r = minimum + datetime.timedelta(days=random_number_of_days)
+    return r.strftime("%Y-%m-%d")
+
+
+def generate_timestamp(minimum, maximum):
+    if not minimum:
+        minimum = datetime.datetime(1970, 1, 1, 0, 0, 0)
+    if not maximum:
+        maximum = datetime.datetime(2025, 1, 1, 0, 0, 0)
+    time_between_dates = maximum - minimum
+    seconds_between_dates = time_between_dates.total_seconds()
+    random_number_of_seconds = random.randrange(int(seconds_between_dates))
+    r = minimum + datetime.timedelta(seconds=random_number_of_seconds)
+    return r.strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+
+def generate_duration():
+    n = random.randint(1, 10)
+    if random.choice(['P', 'T']) == 'P':
+        return "P{}{}".format(n, random.choice(['Y', 'M', 'D', 'W']))
+    else:
+        return "T{}{}".format(n, random.choice(['H', 'M', 'S']))
+
+
+def generate_string(minimum, maximum):
+    if not minimum:
+        minimum = 1
+    else:
+        minimum = max(minimum, 1)
+    if not maximum:
+        maximum = 25
+    else:
+        maximum = max(maximum, 1)
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for _ in range(minimum, random.randint(minimum + 1, maximum + 1)))
+
+
+def generate_enum(values):
+    return random.choice(values)
 
 
 def load_json(json_file):
@@ -34,6 +108,9 @@ class FieldGeneric:
         field_type = self.field_properties.get('type', None)
         return get_field_type(field_type, field_format)
 
+    def generate(self):
+        raise Exception("Not implemented")
+
     def get_expectations(self) -> {}:
         return validate_nullable(self.field_path, self.is_nullable)
 
@@ -47,6 +124,35 @@ class FieldString(FieldGeneric):
         self.field_format = self.field_properties.get('format', None)
         if self.field_properties['type'] != 'string':
             raise Exception('FieldString requires string type')
+
+    def generate(self):
+        fmt = self.field_format
+        prp = self.field_properties
+        if fmt == 'date':
+            minimum = prp.get('min', None)
+            maximum = prp.get('max', None)
+            if minimum:
+                minimum = datetime.datetime.strptime(minimum, "%Y-%m-%d")
+            if maximum:
+                maximum = datetime.datetime.strptime(maximum, "%Y-%m-%d")
+            return generate_date(minimum, maximum)
+        elif fmt == 'date-time':
+            minimum = prp.get('min', None)
+            maximum = prp.get('max', None)
+            if minimum:
+                minimum = datetime.datetime.strptime(minimum, "%Y-%m-%d")
+            if maximum:
+                maximum = datetime.datetime.strptime(maximum, "%Y-%m-%d")
+            return generate_timestamp(minimum, maximum)
+        elif fmt == 'duration':
+            return generate_duration()
+        elif fmt == 'uuid':
+            return generate_uuid()
+        else:
+            if prp.get('enum', None):
+                return generate_enum(prp['enum'])
+            else:
+                return generate_string(prp.get('minLength', None), prp.get('maxLength', None))
 
     def get_expectations(self):
         constraints = super().get_expectations()
@@ -63,6 +169,14 @@ class FieldNumber(FieldGeneric):
         if self.field_properties['type'] != 'integer' and self.field_properties['type'] != 'number':
             raise Exception('FieldNumber requires integer or number type')
 
+    def generate(self):
+        minimum = self.field_properties.get('minimum', None)
+        maximum = self.field_properties.get('maximum', None)
+        if self.field_properties['type'] == 'integer':
+            return generate_integer(minimum, maximum)
+        else:
+            return generate_number(minimum, maximum)
+
     def get_expectations(self):
         constraints = super().get_expectations()
         constraints.update(validate_numbers(self.field_path, self.field_properties))
@@ -74,6 +188,9 @@ class FieldBoolean(FieldGeneric):
         super().__init__(args)
         if self.field_properties['type'] != 'boolean':
             raise Exception('FieldBoolean requires boolean type')
+
+    def generate(self):
+        return bool(random.getrandbits(1))
 
     def get_expectations(self):
         return super().get_expectations()
@@ -197,17 +314,52 @@ def validate_strings(field_path, field_properties):
     maximum = field_properties.get('maxLength', None)
     pattern = field_properties.get('pattern', None)
     enum = field_properties.get('enum', None)
+    fmt = field_properties.get('format', None)
 
-    if enum:
-        nme = "[{field}] VALUE".format(field=field_path)
-        enums = ', '.join(["'{}'".format(e) for e in enum])
-        exp = "{field} IS NULL OR {field} IN ({enums})".format(field=field_path, enums=enums)
-        constraints[nme] = exp
+    if fmt:
+        nme = "[{field}] MATCH".format(field=field_path)
+        if fmt == 'uuid':
+            pattern = '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+            exp = "{field} IS NULL OR {field} RLIKE '{pattern}'".format(field=field_path, pattern=pattern)
+            constraints[nme] = exp
+        elif fmt == 'duration':
+            p1 = '^P\\d{+}[YMWD]$'
+            p2 = '^T\\d{+}[HMS]$'
+            exp = "{field} IS NULL OR {field} RLIKE '{p1}' OR {field} RLIKE '{p2}'".format(
+                field=field_path, p1=p1, p2=p2)
+            constraints[nme] = exp
+        elif fmt == 'ipv4':
+            pattern = '^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$'
+            exp = "{field} IS NULL OR {field} RLIKE '{p1}'".format(field=field_path, p1=pattern)
+            constraints[nme] = exp
+        elif fmt == 'ipv6':
+            pattern = '^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$'
+            exp = "{field} IS NULL OR {field} RLIKE '{p1}'".format(field=field_path, p1=pattern)
+            constraints[nme] = exp
+        elif fmt == 'hostname':
+            pattern = '^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|' \
+                      '[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$'
+            exp = "{field} IS NULL OR {field} RLIKE '{p1}'".format(field=field_path, p1=pattern)
+            constraints[nme] = exp
+        elif fmt == 'uuid':
+            pattern = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+            exp = "{field} IS NULL OR {field} RLIKE '{p1}'".format(field=field_path, p1=pattern)
+            constraints[nme] = exp
+        elif fmt == 'time':
+            pattern = '^(0?[1-9]|1[012]):[0-5][0-9]:[0-5][0-9]$'
+            exp = "{field} IS NULL OR {field} RLIKE '{pattern}'".format(field=field_path, pattern=pattern)
+            constraints[nme] = exp
 
     if pattern:
         nme = "[{field}] MATCH".format(field=field_path)
         # regexes would certainly get curly brackets that breaks our string formatting
         exp = "{field} IS NULL OR {field} RLIKE '{pattern}'".format(field=field_path, pattern=pattern)
+        constraints[nme] = exp
+
+    if enum:
+        nme = "[{field}] VALUE".format(field=field_path)
+        enums = ', '.join(["'{}'".format(e) for e in enum])
+        exp = "{field} IS NULL OR {field} IN ({enums})".format(field=field_path, enums=enums)
         constraints[nme] = exp
 
     nme = "[{field}] LENGTH".format(field=field_path)

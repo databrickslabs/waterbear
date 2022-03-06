@@ -6,7 +6,8 @@
   "properties": {
     "id": {
       "description": "Employee ID",
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "person": {
       "description": "Employee personal information",
@@ -18,10 +19,11 @@
     "joined_date": {
       "description": "Employee first day of employment",
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "min": "2016-01-01"
     },
     "high_fives": {
-      "type": "number",
+      "type": "integer",
       "description": "Number of high fives",
       "minimum": 1,
       "maximum": 300

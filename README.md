@@ -2,15 +2,17 @@
   <img src="images/waterbear-small.png" width="300px"/>
 </p>
 
+*Tardigrades can be found in milder environments such as lakes, ponds and meadows, often living near lake houses. 
+Though these species are disarmingly cute, they are also nearly indestructible and can survive in harsh 
+environments like outer space. This project gives life to the smallest fully functional data processing unit with the 
+highest degrees of resilience and governance standards. We coded our tardigrades to carry the burden of 
+enforcing enterprise data models that brings life to an industry regulated data lakehouse.*
+
+___
+
 [![DBR](https://img.shields.io/badge/DBR-9.1_ML-green)]()
 [![codecov](https://codecov.io/gh/databrickslabs/waterbear/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
 [![PyPI version](https://badge.fury.io/py/dbl-waterbear.svg)](https://badge.fury.io/py/watergrade)
-
-Tardigrades (aka water bears) can be found in milder environments such as lakes, ponds and meadows, often living near 
-lake houses. Though these species are disarmingly cute, they are also nearly indestructible and can survive in harsh 
-environments like outer space. This project gives life to the smallest fully functional unit of data processing work 
-with the highest degrees of resilience and governance standards. We coded our water bears to carry the burden of 
-enforcing enterprise data models that brings life to an industry regulated data lakehouse.
 
 ## Enterprise data models
 
@@ -18,9 +20,7 @@ Given an enterprise data model, we automatically convert an entity into its spar
 derive tables expectations as SQL expressions and provision data pipelines that accelerate development of production 
 workflows. Such a foundation allows financial services institutions to bootstrap their 
 [Lakehouse for Financial Services](https://databricks.com/solutions/industries/financial-services) with 
-resilient data pipelines and minimum development overhead. Designed with industry standards in mind, this project
-is compatible with multiple data formats and follows the latest trends and developments observed across the financial 
-services industry.
+resilient data pipelines and minimum development overhead. 
 
 ### JSON Schema
 
@@ -33,28 +33,13 @@ the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubat
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
-from waterbear.builder import JsonBuilder
-schema, constraints = JsonBuilder('fire/model').build("collateral")
-```
-
-### LEGEND Schema
-
-[Open sourced by Goldman Sachs](https://www.finos.org/press/goldman-sachs-open-sources-its-data-modeling-platform-through-finos) 
-and maintained by the [Finos](https://www.finos.org/) community, the [Legend](https://legend.finos.org/) framework 
-is a flexible platform that offers financial institutions solutions to explore, define, connect and integrate data into 
-their business processes. Through its abstraction language (PURE) and interface (legend studio), business modelers can 
-collaborate in the creation of enterprise data models with strict governance standards and software delivery best 
-practices. Pending our code contribution [approval](https://github.com/finos-labs/legend-delta) to the Finos community, 
-we will access the spark schema and delta expectations from any PURE entity such as the `derivative` model example below
-
-```python
-from waterbear.builder import LegendBuilder
-schema, constraints = LegendBuilder('legend/model').build("derivative")
+from waterbear.convertor import JsonSchemaConvertor
+schema, constraints = JsonSchemaConvertor('fire/model').convert("collateral")
 ```
 
 ## Execution
 
-Even though records may often "look" structured (e.g. reading JSON files or well defined CSVs), 
+Even though records may often "look" structured (e.g. reading JSON files or well-defined CSVs), 
 enforcing a schema is not just a good practice; in enterprise settings, it guarantees any missing field is still 
 expected, unexpected fields are discarded and data types are fully evaluated (e.g. a date should be treated as a date 
 object and not a string). We retrieve the spark schema required to process a given entity that we can apply on batch 
@@ -74,9 +59,9 @@ derivative_df = (
 Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
 we can detect if a field is required or not. Given an enumeration object, we ensure its value consistency 
 (e.g. country code). In addition to the technical constraints derived from the schema itself, the model also reports 
-business expectations using e.g. minimum, maximum, maxItems, pattern JSON parameters or PURE business logic in Legend. 
+business expectations using e.g. minimum, maximum, maxItems, pattern. 
 All these technical and business constraints will be programmatically retrieved from our model and interpreted 
-as a series of SQL expressions as per the following example.
+as a series of SQL expressions.
 
 ```json
 {
@@ -95,8 +80,7 @@ timeliness in financial data pipelines.
 
 ### Delta Live Tables
 
-Our first step is to retrieve files landing to a our industry lakehouse using Spark auto-loader 
-(though this framework can easily be extended to read different streams, using a Kafka connector for instance). 
+Our first step is to retrieve files landing to our industry lakehouse using Spark auto-loader. 
 In continuous mode, news files will be processed as they unfold, `max_files` at a time. 
 In triggered mode, only new files will be processed since last run. 
 Using Delta Live Tables, we ensure the execution and processing of delta increments, preventing organizations 
@@ -108,9 +92,9 @@ def bronze():
     return (
         spark
             .readStream
-            .format('csv')   # we read standard sources
+            .format('csv')  # we read standard sources
             .schema(schema)  # and enforce schema
-            .build('/path/to/data/files')
+            .convert('/path/to/data/files')
     )
 ```
 
