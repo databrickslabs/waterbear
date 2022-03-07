@@ -180,7 +180,7 @@ class JsonSchemaConvertor:
 
         # Parsing our object nested schema
         struct = StructType(self.__process_object(field_properties, field_path))
-        struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
+        struct = StructField(field_name, struct, is_nullable, metadata={"comment": field_desc})
         return struct
 
     def __process_field_atomic(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
@@ -230,7 +230,7 @@ class JsonSchemaConvertor:
 
         # Parsing our array and its possible nested schema (for arrays of complex type)
         struct = ArrayType(self.__get_array_type(field_properties['items']))
-        struct = StructField(field_name, struct, is_nullable, metadata={"desc": field_desc})
+        struct = StructField(field_name, struct, is_nullable, metadata={"comment": field_desc})
         return struct
 
     def __get_array_type(self, field_properties) -> DataType:

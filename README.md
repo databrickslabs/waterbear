@@ -1,6 +1,8 @@
 <p align="left">
-  <img src="images/waterbear-small.png" width="300px"/>
+  <img src="images/waterbear.png" width="300px"/>
 </p>
+
+# Waterbear
 
 *Tardigrades can be found in milder environments such as lakes, ponds and meadows, often living near 'lakehouse'. 
 Though these species are disarmingly cute, they are also nearly indestructible and can survive in harsh 
@@ -25,11 +27,8 @@ resilient data pipelines and minimum development overhead.
 ### JSON Schema
 
 Adhering to strict industry data standards, our project is supporting data models expressed as 
-[JSON Schema](https://json-schema.org/) and was built to ensure full compatibility with the 
-[FIRE](https://suade.org/fire/manifesto/) initiative led by [Suade Labs](https://suade.org/).
-The Financial Regulatory data standard (FIRE) defines a common specification for the transmission of granular data 
-between regulatory systems in finance, supported by the [European Commission](http://ec.europa.eu/index_en.htm), 
-the [Open Data Institute](http://opendata.institute/) and the [Open Data Incubator](https://opendataincubator.eu/). 
+[JSON Schema](https://json-schema.org/) and was built to ensure full compatibility with recent open source initiatives 
+like the [FIRE](https://suade.org/fire/manifesto/) data model for regulatory reporting.
 In the example below, we access the spark schema and delta expectations from the `collateral` entity.
 
 ```python
@@ -59,7 +58,7 @@ derivative_df = (
 Applying a schema is one thing, enforcing its constraints is another. Given the schema definition of an entity, 
 we can detect if a field is required or not. Given an enumeration object, we ensure its value consistency 
 (e.g. country code). In addition to the technical constraints derived from the schema itself, the model also reports 
-business expectations using e.g. minimum, maximum, maxItems, pattern. 
+business expectations using e.g. `minimum`, `maximum`, `maxItems`, etc. 
 All these technical and business constraints will be programmatically retrieved from our model and interpreted 
 as a series of SQL expressions.
 
@@ -92,7 +91,7 @@ def bronze():
     return (
         spark
             .readStream
-            .format('csv')  # we read standard sources
+            .format('csv')   # we read standard sources
             .schema(schema)  # and enforce schema
             .convert('/path/to/data/files')
     )
@@ -129,6 +128,12 @@ for x in xs:
 {"id": 4182, "person": {"first_name": "ijlzxxpv", "last_name": "ldpnnkohf", "birth_date": "1982-11-10"}, "joined_date": "2018-06-29", "skills": ["R"]}
 {"id": 4940, "person": {"first_name": "lhklebpkcxp", "last_name": "jir", "birth_date": "1998-01-06"}, "high_fives": 213, "skills": ["SQL"], "role": "RSA"}
 {"id": 5920, "person": {"first_name": "njadmuflxqbzc", "last_name": "arggdbaynulumrchreblfvxfe", "birth_date": "1997-06-26", "username": "snuafihfatyf"}, "high_fives": 105, "skills": ["PYTHON"], "role": "SA"}
+```
+
+## Building a wheel file
+
+```shell
+python setup.py bdist_wheel --universal
 ```
 
 ## Using the Project

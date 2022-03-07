@@ -194,7 +194,7 @@ class UtilFieldClassTest(unittest.TestCase):
         self.assertEqual(field.dataType, BooleanType())
         self.assertEqual(field.name, 'bar')
         self.assertEqual(field.nullable, False)
-        self.assertEqual(field.metadata['desc'], 'dummy')
+        self.assertEqual(field.metadata['comment'], 'dummy')
 
         v = list(o.get_expectations().items())[0]
         self.assertEqual(v[0], '[`foo`.`bar`] NULLABLE', 'constraint name is correct')

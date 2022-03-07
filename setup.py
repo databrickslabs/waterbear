@@ -9,7 +9,7 @@ setuptools.setup(
     description='Automated provisioning of an industry Lakehouse with enterprise data model',
     long_description_content_type='text/markdown',
     url='https://github.com/databrickslabs/waterbear',
-    packages=find_packages(where='.', include=['waterbear']),
+    packages=find_packages(where='.'),
     extras_require=dict(tests=["pytest"]),
     classifiers=[
         'Programming Language :: Python :: 3',

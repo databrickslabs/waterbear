@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Person Schema",
+  "title": "employee",
   "description": "Entity describing an employee",
   "type": "object",
   "properties": {
