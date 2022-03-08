@@ -44,13 +44,14 @@ class JsonSchemaConvertor:
         # In addition to the schema, we also return all expectations
         return schema, self.constraints
 
-    def __process_object(self, entity, parent_path=None) -> [StructField]:
+    def __process_object(self, entity, parent_path=None, process_constraints=True) -> [StructField]:
         """
         Core business logic of a JSON entity, we process a given entity from a JSON object
         An entity contains metadata (e.g. description), required field definition and property value
         We extract each property, map them to their spark type
         :param entity: The JSON entity we want to extract Spark schema from
         :param parent_path: For nested object, we need to know the full hierarchy to attach that entity to (if any)
+        :param process_constraints: We may decide to skip constraints stage, especially for array elements
         :return: the list of [pyspark.sql.types.StructField] defining our JSON entity and all its underlying objects
         """
 
@@ -60,7 +61,7 @@ class JsonSchemaConvertor:
         # loading this supertype, we will process it just like another JSON entity
         if "allOf" in entity.keys():
             for ref in entity['allOf']:
-                struct_fields.extend(self.__process_supertype(ref['$ref'], parent_path))
+                struct_fields.extend(self.__process_supertype(ref['$ref'], parent_path, process_constraints))
             return struct_fields
 
         # we get the list of mandatory fields for our JSON entity
@@ -75,7 +76,8 @@ class JsonSchemaConvertor:
             is_nullable = field_name not in required
             # nested object will not inherit from the parent description, hence a None parent description
             # we process each field in a different function to understand complex / simple types
-            field_struct = self.__process_field(field_name, is_nullable, field_properties, parent_path, None)
+            field_struct = self.__process_field(field_name, is_nullable, field_properties, parent_path, None,
+                                                process_constraints)
 
             # we append each field as spark [pyspark.sql.types.StructField] to our entity schema
             struct_fields.append(field_struct)
@@ -84,22 +86,23 @@ class JsonSchemaConvertor:
         # returning all of our [pyspark.sql.types.StructField] defining our Spark entity
         return struct_fields
 
-    def __process_supertype(self, ref_link, parent_path=None) -> [StructField]:
+    def __process_supertype(self, ref_link, parent_path=None, process_constraints=True) -> [StructField]:
         """
         Some entities may be built as a supertype to other entities. e.g. A `customer` is a supertype to a `person`.
         We load our referenced entity as we would be loading any object, parsing json file into spark schema
         :param ref_link: the link pointing to a JSON file (must be in our same model directory)
         :param parent_path: the fully qualified name of our parent that we can attach that supertype to (if any)
+        :param process_constraints: we may decide to skip constraint stages, especially for array elements
         :return: the list of [pyspark.sql.types.StructField] defining our JSON supertype and all its underlying objects
         """
 
         ref_object = ref_link.split('/')[-1]
         ref_json_file = os.path.join(self.schema_directory, ref_object)
         ref_json_model = load_json(ref_json_file)
-        return self.__process_object(ref_json_model, parent_path)
+        return self.__process_object(ref_json_model, parent_path, process_constraints)
 
     def __process_field(self, field_name, is_nullable, field_properties, parent_path,
-                        parent_description) -> StructField:
+                        parent_description, process_constraints=True) -> StructField:
         """
         Core business logic of a JSON field, we convert this field as spark schema and SQL constraints
         A field may be a reference to different object, possibly in a different file.
@@ -109,6 +112,7 @@ class JsonSchemaConvertor:
         :param field_properties: json properties of the field
         :param parent_path: fully qualified name of the parent object
         :param parent_description: description of the parent object
+        :param process_constraints: we may decide to skip constraint stage, especially for array elements
         :return: The Spark [pyspark.sql.types.StructField] embedding our JSON field and its underlying objects
         """
 
@@ -122,21 +126,24 @@ class JsonSchemaConvertor:
 
         # fields may be described as a reference to different JSON models.
         if field_properties.get('$ref', None):
-            return self.__process_field_reference(field_name, is_nullable, field_properties, parent_path, field_desc)
+            return self.__process_field_reference(field_name, is_nullable, field_properties, parent_path, field_desc,
+                                                  process_constraints)
 
         # processing property of type object (nested element)
         if field_properties['type'] == 'object':
-            return self.__process_field_object(field_name, field_path, is_nullable, field_properties, field_desc)
+            return self.__process_field_object(field_name, field_path, is_nullable, field_properties, field_desc,
+                                               process_constraints)
 
         # processing property of type array (could be of complex type)
         if field_properties['type'] == "array":
             return self.__process_field_array(field_name, field_path, is_nullable, field_properties, field_desc)
 
         # processing property at lowest granularity (simple type, no nested elements)
-        return self.__process_field_atomic(field_name, field_path, is_nullable, field_properties, field_desc)
+        return self.__process_field_atomic(field_name, field_path, is_nullable, field_properties, field_desc,
+                                           process_constraints)
 
     def __process_field_reference(self, field_name, is_nullable, field_properties, parent_path,
-                                  field_desc) -> StructField:
+                                  field_desc, process_constraints=True) -> StructField:
         """
         A JSON element might be a reference to another field, eventually to a different JSON file
         :param field_name: the name of the JSON entity
@@ -144,6 +151,7 @@ class JsonSchemaConvertor:
         :param field_properties: the JSON properties defining this object
         :param parent_path: the absolute path of that field for accessing via SQL
         :param field_desc: the description of the field
+        :param process_constraints: we may decide to skip constraint stages, especially for array elements
         :return: The Spark [pyspark.sql.types.StructField] embedding our referenced JSON entity
         """
 
@@ -161,9 +169,10 @@ class JsonSchemaConvertor:
 
         # processing inline property
         ref_property = ref_json_model[ref_object]
-        return self.__process_field(field_name, is_nullable, ref_property, parent_path, field_desc)
+        return self.__process_field(field_name, is_nullable, ref_property, parent_path, field_desc, process_constraints)
 
-    def __process_field_object(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
+    def __process_field_object(self, field_name, field_path, is_nullable, field_properties, field_desc,
+                               process_constraints=True) -> StructField:
         """
         JSON type objects are complex types and must be processed recursively to access each of their nested entities
         :param field_name: the name of our field
@@ -171,19 +180,22 @@ class JsonSchemaConvertor:
         :param is_nullable: whether the array is optional or not
         :param field_properties: the JSON properties defining our array element
         :param field_desc: the description of our field to attach to our metadata (may be inherited from parent)
+        :param process_constraints: we may decide to skip constraints stage, especially for Array elements
         :return: The Spark [pyspark.sql.types.StructField] embedding our JSON array
         """
 
         # Specify default nullable constraints
-        field_constraints = validate_nullable(field_path, is_nullable)
-        self.constraints.update(field_constraints)
+        if process_constraints:
+            field_constraints = validate_nullable(field_path, is_nullable)
+            self.constraints.update(field_constraints)
 
         # Parsing our object nested schema
-        struct = StructType(self.__process_object(field_properties, field_path))
+        struct = StructType(self.__process_object(field_properties, field_path, process_constraints))
         struct = StructField(field_name, struct, is_nullable, metadata={"comment": field_desc})
         return struct
 
-    def __process_field_atomic(self, field_name, field_path, is_nullable, field_properties, field_desc) -> StructField:
+    def __process_field_atomic(self, field_name, field_path, is_nullable, field_properties, field_desc,
+                               process_constraints=True) -> StructField:
         """
         Lowest level hierarchy, our field is of simple type that can be converted to a spark object as-is
         :param field_name: the name of our field
@@ -191,6 +203,7 @@ class JsonSchemaConvertor:
         :param is_nullable: whether the array is optional or not
         :param field_properties: the JSON properties defining our array element
         :param field_desc: the description of our field to attach to our metadata (may be inherited from parent)
+        :param process_constraints: We may decide to skip constraint stage, especially for array elements
         :return: The Spark [pyspark.sql.types.StructField] embedding our JSON element
         """
         field_type = field_properties['type']
@@ -204,7 +217,8 @@ class JsonSchemaConvertor:
             raise Exception("Unsupported type {} for field {}".format(field_type, field_path))
 
         # update constraints
-        self.constraints.update(o.get_expectations())
+        if process_constraints:
+            self.constraints.update(o.get_expectations())
         # and return our structField
         return o.get_struct_field()
 
@@ -250,7 +264,7 @@ class JsonSchemaConvertor:
             a_fields_struct = []
             for field in a_fields:
                 is_nullable = field not in a_fields_required
-                field_struct = self.__process_field(field, is_nullable, a_properties[field], None, None)
+                field_struct = self.__process_field(field, is_nullable, a_properties[field], None, None, False)
                 a_fields_struct.append(field_struct)
             return StructType(a_fields_struct)
         else:
