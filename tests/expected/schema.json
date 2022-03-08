@@ -2,7 +2,7 @@
    "fields": [
       {
          "metadata": {
-            "desc": "Employee ID"
+            "comment": "Employee ID"
          },
          "name": "id",
          "nullable": false,
@@ -10,7 +10,7 @@
       },
       {
          "metadata": {
-            "desc": "Employee personal information"
+            "comment": "Employee personal information"
          },
          "name": "person",
          "nullable": false,
@@ -18,7 +18,7 @@
             "fields": [
                {
                   "metadata": {
-                     "desc": "A person name, first or last"
+                     "comment": "A person name, first or last"
                   },
                   "name": "first_name",
                   "nullable": false,
@@ -26,7 +26,7 @@
                },
                {
                   "metadata": {
-                     "desc": "person last name"
+                     "comment": "person last name"
                   },
                   "name": "last_name",
                   "nullable": false,
@@ -34,7 +34,7 @@
                },
                {
                   "metadata": {
-                     "desc": "Person birth date"
+                     "comment": "Person birth date"
                   },
                   "name": "birth_date",
                   "nullable": false,
@@ -42,7 +42,7 @@
                },
                {
                   "metadata": {
-                     "desc": "employee nickname"
+                     "comment": "employee nickname"
                   },
                   "name": "username",
                   "nullable": true,
@@ -54,7 +54,7 @@
       },
       {
          "metadata": {
-            "desc": "Employee first day of employment"
+            "comment": "Employee first day of employment"
          },
          "name": "joined_date",
          "nullable": true,
@@ -62,7 +62,7 @@
       },
       {
          "metadata": {
-            "desc": "Number of high fives"
+            "comment": "Number of high fives"
          },
          "name": "high_fives",
          "nullable": true,
@@ -70,7 +70,7 @@
       },
       {
          "metadata": {
-            "desc": "Employee skills"
+            "comment": "Employee skills"
          },
          "name": "skills",
          "nullable": true,
@@ -82,7 +82,7 @@
       },
       {
          "metadata": {
-            "desc": "Employee role"
+            "comment": "Employee role"
          },
          "name": "role",
          "nullable": true,

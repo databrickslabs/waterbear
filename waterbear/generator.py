@@ -4,7 +4,7 @@ import random
 
 # EXPERIMENTAL, proceed at your own risk
 class JsonRecordGenerator:
-    def __init__(self, schema_directory, nullable_rate=0.01):
+    def __init__(self, schema_directory, nullable_rate=0.0):
         self.schema_directory = schema_directory
         self.nullable_rate = nullable_rate
         if not os.path.exists(schema_directory) or not os.path.isdir(schema_directory):

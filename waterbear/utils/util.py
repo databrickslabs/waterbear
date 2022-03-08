@@ -115,7 +115,7 @@ class FieldGeneric:
         return validate_nullable(self.field_path, self.is_nullable)
 
     def get_struct_field(self) -> StructField:
-        return StructField(self.field_name, self.get_type(), self.is_nullable, {'desc': self.field_description})
+        return StructField(self.field_name, self.get_type(), self.is_nullable, {'comment': self.field_description})
 
 
 class FieldString(FieldGeneric):
