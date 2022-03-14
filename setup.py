@@ -2,7 +2,7 @@ import setuptools
 from setuptools import find_packages
 
 setuptools.setup(
-    name='waterbear',
+    name='dbl-waterbear',
     version='0.1',
     author='Antoine Amend',
     author_email='antoine.amend@databricks.com',
