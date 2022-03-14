@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="images/waterbear.png" width="300px"/>
+  <img src="https://github.com/databrickslabs/waterbear/blob/master/images/waterbear.png" width="300px"/>
 </p>
 
 # Waterbear
