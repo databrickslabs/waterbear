@@ -1,12 +1,16 @@
 import setuptools
 from setuptools import find_packages
 
+with open('./README.md', 'r') as fh:
+    long_description = fh.read()
+
 setuptools.setup(
     name='dbl-waterbear',
     version='0.1',
     author='Antoine Amend',
     author_email='antoine.amend@databricks.com',
     description='Automated provisioning of an industry Lakehouse with enterprise data model',
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/databrickslabs/waterbear',
     packages=find_packages(where='.'),
