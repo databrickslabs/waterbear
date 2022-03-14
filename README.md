@@ -14,7 +14,7 @@ ___
 
 [![DBR](https://img.shields.io/badge/DBR-9.1_ML-green)]()
 [![codecov](https://codecov.io/gh/databrickslabs/waterbear/branch/master/graph/badge.svg)](https://codecov.io/gh/databrickslabs/watergrade)
-[![PyPI version](https://badge.fury.io/py/dbl-waterbear.svg)](https://badge.fury.io/py/watergrade)
+[![PyPI version](https://badge.fury.io/py/dbl-waterbear.svg)](https://badge.fury.io/py/dbl-watergrade)
 
 ## Enterprise data models
 
